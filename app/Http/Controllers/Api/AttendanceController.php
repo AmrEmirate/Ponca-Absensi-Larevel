@@ -8,6 +8,7 @@ use App\Models\Absensi;
 use App\Models\MasterLokasi;
 use App\Services\FacePlusPlusService;
 use App\Services\GeoService;
+use App\Http\Requests\AttendanceCheckInRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -16,7 +17,7 @@ class AttendanceController extends Controller
     /**
      * POST /api/attendance/check-in
      */
-    public function checkIn(Request $request)
+    public function checkIn(AttendanceCheckInRequest $request)
     {
         $jwtUser = $request->attributes->get('user');
         $latitude = $request->input('latitude');

@@ -24,7 +24,7 @@ Route::get('/health', function () {
 
 // === Auth Routes ===
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
     Route::middleware(JwtAuth::class)->group(function () {
         Route::post('/verify-pin', [AuthController::class, 'verifyPin']);
@@ -37,8 +37,8 @@ Route::prefix('auth')->group(function () {
 
 // === Attendance Routes ===
 Route::prefix('attendance')->middleware(JwtAuth::class)->group(function () {
-    Route::post('/check-in', [AttendanceController::class, 'checkIn']);
-    Route::post('/check-out', [AttendanceController::class, 'checkOut']);
+    Route::post('/check-in', [AttendanceController::class, 'checkIn'])->middleware('throttle:30,1');
+    Route::post('/check-out', [AttendanceController::class, 'checkOut'])->middleware('throttle:30,1');
     Route::get('/history', [AttendanceController::class, 'getHistory']);
     Route::get('/geofence', [AttendanceController::class, 'getGeofence']);
 });

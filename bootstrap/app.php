@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Konfigurasi CORS agar semua origin bisa akses API (untuk Android app)
         $middleware->trustProxies(at: '*');
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
@@ -22,6 +23,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 return true;
             }
             return $request->expectsJson();
+        });
+
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'errors' => $e->errors()
+                ], 422);
+            }
         });
 
         $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, Request $request) {
@@ -38,7 +48,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                return response()->json(['error' => $e->getMessage() ?: 'Terjadi kesalahan internal pada server.'], 500);
+                $message = config('app.debug') 
+                    ? ($e->getMessage() ?: 'Terjadi kesalahan internal pada server.') 
+                    : 'Terjadi kesalahan internal pada server.';
+                return response()->json(['error' => $message], 500);
             }
         });
     })->create();

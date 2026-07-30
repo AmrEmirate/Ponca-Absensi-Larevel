@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\FacePlusPlusService;
 use App\Services\CloudinaryService;
+use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Firebase\JWT\JWT;
@@ -15,14 +16,11 @@ class AuthController extends Controller
     /**
      * POST /api/auth/login
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $emailOrNik = $request->input('email');
-        $password = $request->input('password');
-
-        if (!$emailOrNik || !$password) {
-            return response()->json(['error' => 'Email/NIK dan password wajib diisi'], 400);
-        }
+        $validated = $request->validated();
+        $emailOrNik = $validated['email'];
+        $password = $validated['password'];
 
         $user = User::where('email', $emailOrNik)->orWhere('nik', $emailOrNik)->first();
 
@@ -34,7 +32,10 @@ class AuthController extends Controller
             return response()->json(['error' => 'Kredensial tidak valid'], 401);
         }
 
-        $secret = config('services.jwt.secret') ?: 'YOUR_SUPER_SECRET_JWT_KEY_PONCA_2026';
+        $secret = config('services.jwt.secret');
+        if (empty($secret)) {
+            return response()->json(['error' => 'Konfigurasi kunci otorisasi server (JWT_SECRET) tidak valid atau belum diatur.'], 500);
+        }
         $payload = [
             'id' => $user->id,
             'nik' => $user->nik,

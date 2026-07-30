@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Izin;
 use App\Services\CloudinaryService;
+use App\Http\Requests\CreateIzinRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -13,7 +14,7 @@ class IzinController extends Controller
     /**
      * POST /api/izin
      */
-    public function createIzin(Request $request)
+    public function createIzin(CreateIzinRequest $request)
     {
         $jwtUser = $request->attributes->get('user');
         $userId = $jwtUser->id;

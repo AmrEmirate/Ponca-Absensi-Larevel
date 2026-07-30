@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Http\Requests\CreateEmployeeRequest;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -331,7 +332,7 @@ class AdminController extends Controller
     /**
      * POST /api/admin/employees
      */
-    public function createEmployee(Request $request)
+    public function createEmployee(CreateEmployeeRequest $request)
     {
         $nik = $request->input('nik');
         if (!$nik) {
