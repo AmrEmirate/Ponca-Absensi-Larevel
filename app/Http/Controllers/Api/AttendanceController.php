@@ -9,6 +9,7 @@ use App\Models\MasterLokasi;
 use App\Services\FacePlusPlusService;
 use App\Services\GeoService;
 use App\Http\Requests\AttendanceCheckInRequest;
+use App\Http\Requests\AttendanceCheckOutRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -160,7 +161,7 @@ class AttendanceController extends Controller
     /**
      * POST /api/attendance/check-out
      */
-    public function checkOut(Request $request)
+    public function checkOut(AttendanceCheckOutRequest $request)
     {
         $jwtUser = $request->attributes->get('user');
         $latitude = $request->input('latitude');
