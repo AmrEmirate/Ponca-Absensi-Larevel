@@ -27,19 +27,22 @@ class AdminController extends Controller
         $endDate = $request->query('endDate');
         $locationId = $request->query('locationId') ?? $request->query('master_lokasi_id');
 
-        $query = Absensi::with(['user:id,nama,nik,jabatan,foto_profil']);
+        $today = Carbon::now('Asia/Jakarta')->toDateString();
+        $start = $today;
+        $end = $today;
 
         if ($startDate && $endDate) {
             try {
                 $start = Carbon::parse($startDate)->startOfDay()->toDateString();
                 $end = Carbon::parse($endDate)->endOfDay()->toDateString();
-
-                $query->where('tanggal', '>=', $start)
-                      ->where('tanggal', '<=', $end);
             } catch (\Exception $e) {
                 return response()->json(['error' => 'Format startDate atau endDate tidak valid.'], 400);
             }
         }
+
+        $query = Absensi::with(['user:id,nama,nik,jabatan,foto_profil'])
+            ->where('tanggal', '>=', $start)
+            ->where('tanggal', '<=', $end);
 
         if ($locationId) {
             $locId = (int) $locationId;
@@ -51,10 +54,16 @@ class AdminController extends Controller
             });
         }
 
-        $absensi = $query->orderBy('tanggal', 'desc')->get()->map(function ($absen) {
-            return [
+        $absensiRecords = $query->orderBy('tanggal', 'desc')->get();
+        $results = collect();
+
+        $presentUserDates = [];
+        foreach ($absensiRecords as $absen) {
+            $dateStr = $absen->tanggal ? $absen->tanggal->format('Y-m-d') : '';
+            $presentUserDates[$absen->user_id . '_' . $dateStr] = true;
+            $results->push([
                 'id' => $absen->id,
-                'tanggal' => $absen->tanggal->toISOString(),
+                'tanggal' => $absen->tanggal ? $absen->tanggal->toISOString() : null,
                 'waktuMasuk' => $absen->waktu_masuk ? $absen->waktu_masuk->toISOString() : null,
                 'waktuKeluar' => $absen->waktu_keluar ? $absen->waktu_keluar->toISOString() : null,
                 'status' => $absen->status,
@@ -64,10 +73,38 @@ class AdminController extends Controller
                     'jabatan' => $absen->user->jabatan,
                     'fotoProfil' => $absen->user->foto_profil,
                 ] : null,
-            ];
-        });
+            ]);
+        }
 
-        return response()->json(['data' => $absensi]);
+        // If single-day report query, include active employees who haven't checked in as ALPA
+        if ($start === $end) {
+            $empQuery = User::where('role', 'KARYAWAN')->where('is_active', true);
+            if ($locationId) {
+                $empQuery->where('master_lokasi_id', (int) $locationId);
+            }
+            $activeEmployees = $empQuery->get();
+
+            foreach ($activeEmployees as $emp) {
+                $key = $emp->id . '_' . $start;
+                if (!isset($presentUserDates[$key])) {
+                    $results->push([
+                        'id' => -$emp->id,
+                        'tanggal' => Carbon::parse($start)->toISOString(),
+                        'waktuMasuk' => null,
+                        'waktuKeluar' => null,
+                        'status' => 'ALPA',
+                        'user' => [
+                            'nik' => $emp->nik,
+                            'nama' => $emp->nama,
+                            'jabatan' => $emp->jabatan,
+                            'fotoProfil' => $emp->foto_profil,
+                        ],
+                    ]);
+                }
+            }
+        }
+
+        return response()->json(['data' => $results]);
     }
 
     /**
