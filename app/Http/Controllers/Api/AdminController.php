@@ -673,6 +673,7 @@ class AdminController extends Controller
         $reportData = $users->map(function ($user) {
             $totalHadir = 0;
             $totalTelat = 0;
+            $totalIzin = 0;
 
             foreach ($user->absensi as $absen) {
                 if (in_array($absen->status, ['TEPAT_WAKTU', 'TERLAMBAT'])) {
@@ -680,6 +681,9 @@ class AdminController extends Controller
                 }
                 if ($absen->status === 'TERLAMBAT') {
                     $totalTelat++;
+                }
+                if (in_array($absen->status, ['IZIN', 'SAKIT', 'CUTI'])) {
+                    $totalIzin++;
                 }
             }
 
@@ -692,6 +696,7 @@ class AdminController extends Controller
                 'gajiPerhari' => $user->gaji_perhari,
                 'totalHadir' => $totalHadir,
                 'totalTelat' => $totalTelat,
+                'totalIzin' => $totalIzin,
                 'totalGaji' => $totalHadir * $user->gaji_perhari,
             ];
         });
@@ -740,18 +745,23 @@ class AdminController extends Controller
         $sheet->setCellValue('C1', 'Gaji Perhari');
         $sheet->setCellValue('D1', 'Total Hadir');
         $sheet->setCellValue('E1', 'Total Telat');
-        $sheet->setCellValue('F1', 'Total Gaji');
+        $sheet->setCellValue('F1', 'Total Izin');
+        $sheet->setCellValue('G1', 'Total Gaji');
 
         $row = 2;
         foreach ($users as $user) {
             $totalHadir = 0;
             $totalTelat = 0;
+            $totalIzin = 0;
             foreach ($user->absensi as $absen) {
                 if (in_array($absen->status, ['TEPAT_WAKTU', 'TERLAMBAT'])) {
                     $totalHadir++;
                 }
                 if ($absen->status === 'TERLAMBAT') {
                     $totalTelat++;
+                }
+                if (in_array($absen->status, ['IZIN', 'SAKIT', 'CUTI'])) {
+                    $totalIzin++;
                 }
             }
 
@@ -760,7 +770,8 @@ class AdminController extends Controller
             $sheet->setCellValue("C{$row}", $user->gaji_perhari);
             $sheet->setCellValue("D{$row}", $totalHadir);
             $sheet->setCellValue("E{$row}", $totalTelat);
-            $sheet->setCellValue("F{$row}", $totalHadir * $user->gaji_perhari);
+            $sheet->setCellValue("F{$row}", $totalIzin);
+            $sheet->setCellValue("G{$row}", $totalHadir * $user->gaji_perhari);
             $row++;
         }
 

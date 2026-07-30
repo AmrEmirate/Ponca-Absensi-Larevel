@@ -165,6 +165,35 @@ class IzinController extends Controller
         $izin = Izin::findOrFail($id);
         $izin->update(['status' => $status]);
 
+        if ($status === 'APPROVED') {
+            $jenisUpper = strtoupper($izin->jenis_izin ?? '');
+            $absenStatus = 'IZIN';
+            if (str_contains($jenisUpper, 'SAKIT')) {
+                $absenStatus = 'SAKIT';
+            } elseif (str_contains($jenisUpper, 'CUTI')) {
+                $absenStatus = 'CUTI';
+            }
+
+            \App\Models\Absensi::updateOrCreate(
+                [
+                    'user_id' => $izin->user_id,
+                    'tanggal' => $izin->tanggal->toDateString(),
+                ],
+                [
+                    'status' => $absenStatus,
+                    'foto_wajah' => $izin->foto_url,
+                    'waktu_masuk' => null,
+                    'waktu_keluar' => null,
+                    'master_lokasi_id' => $izin->user?->master_lokasi_id,
+                ]
+            );
+        } elseif ($status === 'REJECTED') {
+            \App\Models\Absensi::where('user_id', $izin->user_id)
+                ->where('tanggal', $izin->tanggal->toDateString())
+                ->whereIn('status', ['IZIN', 'SAKIT', 'CUTI'])
+                ->delete();
+        }
+
         return response()->json([
             'message' => 'Izin berhasil di-' . strtolower($status),
             'data' => $izin->fresh(),
