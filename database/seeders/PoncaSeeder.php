@@ -37,13 +37,19 @@ class PoncaSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 2. Seed User ADMIN (Admin Pabrik Utama 1)
+        // 2. Generate NIK otomatis dan password default berakhiran digit NIK
+        $counter = 1;
+        $nikSuffix = str_pad((string)$counter, 3, '0', STR_PAD_LEFT); // '001'
+        $nik = 'ADM' . $nikSuffix; // 'ADM001'
+        $defaultPassword = 'PoncaAbsensi' . $nikSuffix; // 'PoncaAbsensi001'
+
+        // 3. Seed User ADMIN (Admin Pabrik Utama 1)
         User::create([
-            'nik' => 'ADM001',
+            'nik' => $nik,
             'email' => 'amremirate03@gmail.com',
             'nama' => 'Amr Emirate',
             'jabatan' => 'Admin Utama',
-            'password' => Hash::make('PoncaAbsensi001'),
+            'password' => Hash::make($defaultPassword),
             'role' => 'ADMIN',
             'is_active' => true,
             'gaji_perhari' => 200000,
