@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class PoncaSeeder extends Seeder
 {
@@ -37,10 +38,12 @@ class PoncaSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 2. Generate NIK otomatis dan password default berakhiran digit NIK
+        // 2. Generate NIK otomatis format Bulan-Tahun-Urutan (misal: 0826001 / 1126001) dan password default
+        $now = Carbon::now('Asia/Jakarta');
+        $prefix = $now->format('my'); // Format bulan & tahun (misal: 0826)
         $counter = 1;
         $nikSuffix = str_pad((string)$counter, 3, '0', STR_PAD_LEFT); // '001'
-        $nik = 'ADM' . $nikSuffix; // 'ADM001'
+        $nik = $prefix . $nikSuffix; // '0826001' (atau '1126001')
         $defaultPassword = 'PoncaAbsensi' . $nikSuffix; // 'PoncaAbsensi001'
 
         // 3. Seed User ADMIN (Admin Pabrik Utama 1)
