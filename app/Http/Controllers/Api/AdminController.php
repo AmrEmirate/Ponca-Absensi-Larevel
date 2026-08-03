@@ -371,7 +371,7 @@ class AdminController extends Controller
     {
         $locationId = $request->query('locationId') ?? $request->query('master_lokasi_id');
 
-        $query = User::whereIn('role', ['ADMIN', 'KARYAWAN', 'SCANNER'])
+        $query = User::whereIn('role', ['ADMIN', 'KARYAWAN'])
             ->with('lokasi');
 
         if ($locationId) {
@@ -408,44 +408,28 @@ class AdminController extends Controller
             $nikSuffix = strlen($nik) >= 3 ? substr($nik, -3) : '001';
             $password = 'PoncaAbsensi' . $nikSuffix;
         }
-        $gajiPerhari = $request->input('gajiPerhari', 0);
-        $hariKerja = $request->input('hariKerja', 'Senin,Selasa,Rabu,Kamis,Jumat');
-        $jamMasukKerja = $request->input('jamMasukKerja', '08:00');
-        $jamKeluarKerja = $request->input('jamKeluarKerja', '17:00');
-        $masterLokasiId = $request->input('masterLokasiId') ?? $request->input('master_lokasi_id');
 
-        if (!$nama || !$email) {
-            return response()->json(['error' => 'Nama dan Email wajib diisi'], 400);
-        }
+        $jabatanLower = strtolower((string)$jabatan);
+        $role = $jabatanLower === 'admin' ? 'ADMIN' : 'KARYAWAN';
 
-        $existing = User::withTrashed()->where(function ($q) use ($email, $nik) {
-            $q->where('email', $email)->orWhere('nik', $nik);
-        })->first();
-        if ($existing) {
-            return response()->json(['error' => 'Email atau NIK sudah terdaftar (termasuk pengguna yang dinonaktifkan)'], 400);
-        }
-
-        $jabatanLower = strtolower($jabatan ?? '');
-        $role = $jabatanLower === 'admin' ? 'ADMIN' : ($jabatanLower === 'scanner' ? 'SCANNER' : 'KARYAWAN');
-
-        $newEmployee = User::create([
+        $user = User::create([
             'nik' => $nik,
             'nama' => $nama,
             'email' => $email,
-            'jabatan' => $jabatan,
             'password' => Hash::make($password),
+            'jabatan' => $jabatan,
             'role' => $role,
-            'gaji_perhari' => (int) $gajiPerhari,
-            'hari_kerja' => $hariKerja,
-            'jam_masuk_kerja' => $jamMasukKerja,
-            'jam_keluar_kerja' => $jamKeluarKerja,
-            'master_lokasi_id' => $masterLokasiId ? (int) $masterLokasiId : null,
+            'gaji_perhari' => $request->input('gaji_perhari', 0),
+            'master_lokasi_id' => $request->input('master_lokasi_id'),
+            'shift_masuk' => $request->input('shift_masuk', '08:00'),
+            'shift_keluar' => $request->input('shift_keluar', '17:00'),
+            'is_active' => true,
         ]);
 
         return response()->json([
-            'message' => 'Karyawan berhasil ditambahkan',
-            'data' => $this->formatEmployee($newEmployee->load('lokasi')),
-        ]);
+            'message' => 'Karyawan berhasil dibuat',
+            'data' => $this->formatEmployee($user),
+        ], 201);
     }
 
     /**
@@ -477,7 +461,7 @@ class AdminController extends Controller
         }
 
         $jabatanLower = strtolower($jabatan ?? '');
-        $role = $jabatanLower === 'admin' ? 'ADMIN' : ($jabatanLower === 'scanner' ? 'SCANNER' : 'KARYAWAN');
+        $role = $jabatanLower === 'admin' ? 'ADMIN' : 'KARYAWAN';
 
         $data = [
             'nik' => $nik,
@@ -695,7 +679,11 @@ class AdminController extends Controller
             ->orderBy('nama')
             ->get();
 
-        $reportData = $users->map(function ($user) {
+        $startCarbon = Carbon::parse($start);
+        $endCarbon = Carbon::parse($end);
+        $totalDays = $startCarbon->diffInDays($endCarbon) + 1;
+
+        $reportData = $users->map(function ($user) use ($totalDays, $start, $end) {
             $totalHadir = 0;
             $totalTelat = 0;
             $totalIzin = 0;
@@ -712,6 +700,8 @@ class AdminController extends Controller
                 }
             }
 
+            $totalAlpa = max(0, $totalDays - $totalHadir - $totalIzin);
+
             return [
                 'id' => $user->id,
                 'nik' => $user->nik,
@@ -722,7 +712,10 @@ class AdminController extends Controller
                 'totalHadir' => $totalHadir,
                 'totalTelat' => $totalTelat,
                 'totalIzin' => $totalIzin,
+                'totalAlpa' => $totalAlpa,
                 'totalGaji' => $totalHadir * $user->gaji_perhari,
+                'startDate' => $start,
+                'endDate' => $end,
             ];
         });
 
