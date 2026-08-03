@@ -45,6 +45,13 @@ class MasterLokasi extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['namaPlace'];
+
+    public function getNamaPlaceAttribute()
+    {
+        return $this->attributes['nama_place'] ?? '';
+    }
+
     public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(User::class, 'master_lokasi_id');
