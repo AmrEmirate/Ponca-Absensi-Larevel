@@ -94,23 +94,14 @@ class PoncaSeeder extends Seeder
 
             $dateStr = $date->format('Y-m-d');
             
-            // Hari ke-5 dan 15: Izin
+            // Hari ke-5 dan 15: Izin (cukup insert ke izins)
             if ($i == 5 || $i == 15) {
                 Izin::create([
                     'user_id' => $karyawan->id,
                     'tanggal' => $dateStr,
-                    'kategori' => 'SAKIT',
-                    'alasan' => 'Demam dan flu ringan',
+                    'jenis_izin' => 'SAKIT',
+                    'deskripsi' => 'Demam dan flu ringan',
                     'status' => 'APPROVED',
-                ]);
-                Absensi::create([
-                    'user_id' => $karyawan->id,
-                    'master_lokasi_id' => $pabrikHq->id,
-                    'tanggal' => $dateStr,
-                    'waktu_masuk' => null,
-                    'waktu_keluar' => null,
-                    'status' => 'IZIN',
-                    'keterangan_izin' => 'Demam dan flu ringan',
                 ]);
             } 
             // Hari ke-8 dan 22: Terlambat
