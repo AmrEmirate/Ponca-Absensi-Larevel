@@ -22,7 +22,7 @@ class CreateEmployeeRequest extends FormRequest
         return [
             'nama' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
-            'password' => 'required|string|min:6',
+            'password' => 'nullable|string|min:6',
             'nik' => 'nullable|string|max:20',
             'jabatan' => 'nullable|string|max:100',
             'gajiPerhari' => 'nullable|numeric|min:0',

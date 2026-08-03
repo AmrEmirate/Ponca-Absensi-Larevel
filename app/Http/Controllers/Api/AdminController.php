@@ -383,14 +383,18 @@ class AdminController extends Controller
         $email = $request->input('email');
         $jabatan = $request->input('jabatan');
         $password = $request->input('password');
+        if (empty($password)) {
+            $nikSuffix = strlen($nik) >= 3 ? substr($nik, -3) : '001';
+            $password = 'PoncaAbsensi' . $nikSuffix;
+        }
         $gajiPerhari = $request->input('gajiPerhari', 0);
         $hariKerja = $request->input('hariKerja', 'Senin,Selasa,Rabu,Kamis,Jumat');
         $jamMasukKerja = $request->input('jamMasukKerja', '08:00');
         $jamKeluarKerja = $request->input('jamKeluarKerja', '17:00');
         $masterLokasiId = $request->input('masterLokasiId') ?? $request->input('master_lokasi_id');
 
-        if (!$nama || !$email || !$password) {
-            return response()->json(['error' => 'Semua field wajib diisi'], 400);
+        if (!$nama || !$email) {
+            return response()->json(['error' => 'Nama dan Email wajib diisi'], 400);
         }
 
         $existing = User::withTrashed()->where(function ($q) use ($email, $nik) {
