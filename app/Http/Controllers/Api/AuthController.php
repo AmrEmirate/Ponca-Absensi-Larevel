@@ -95,7 +95,9 @@ class AuthController extends Controller
             'serverTime' => \Carbon\Carbon::now($tz)->toIso8601String(),
             'timezone' => $tz,
             'timezoneAbbr' => $tzAbbr,
+            'timezone_abbr' => $tzAbbr,
             'masterLokasiNama' => $lokasiNama,
+            'master_lokasi_nama' => $lokasiNama,
         ]);
     }
 
