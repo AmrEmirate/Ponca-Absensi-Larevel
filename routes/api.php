@@ -31,6 +31,7 @@ Route::prefix('auth')->group(function () {
         Route::get('/me', [AuthController::class, 'getProfile']);
         Route::post('/register-face', [AuthController::class, 'registerFace']);
         Route::post('/request-face-reverification', [AuthController::class, 'requestFaceReverification']);
+        Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::get('/karyawan', [AuthController::class, 'getAllKaryawan']);
     });
 });

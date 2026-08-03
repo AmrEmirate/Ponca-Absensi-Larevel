@@ -232,4 +232,37 @@ class AuthController extends Controller
 
         return response()->json($result);
     }
+
+    /**
+     * POST /api/auth/change-password
+     */
+    public function changePassword(Request $request)
+    {
+        $jwtUser = $request->attributes->get('user');
+        $user = User::find($jwtUser->id);
+
+        if (!$user) {
+            return response()->json(['error' => 'Pengguna tidak ditemukan'], 404);
+        }
+
+        $passwordLama = $request->input('password_lama') ?? $request->input('currentPassword');
+        $passwordBaru = $request->input('password_baru') ?? $request->input('newPassword');
+
+        if (!$passwordLama || !$passwordBaru) {
+            return response()->json(['error' => 'Password lama dan password baru wajib diisi'], 400);
+        }
+
+        if (!Hash::check($passwordLama, $user->password)) {
+            return response()->json(['error' => 'Password saat ini tidak sesuai'], 400);
+        }
+
+        if (strlen($passwordBaru) < 6) {
+            return response()->json(['error' => 'Password baru minimal 6 karakter'], 400);
+        }
+
+        $user->password = Hash::make($passwordBaru);
+        $user->save();
+
+        return response()->json(['message' => 'Password berhasil diperbarui']);
+    }
 }

@@ -46,7 +46,7 @@ class PoncaSeeder extends Seeder
         $nik = $prefix . $nikSuffix; // '0826001' (atau '1126001')
         $defaultPassword = 'PoncaAbsensi' . $nikSuffix; // 'PoncaAbsensi001'
 
-        // 3. Seed User ADMIN
+        // 3. Seed User ADMIN (Admin Pabrik Utama 1)
         User::create([
             'nik' => $nik,
             'email' => 'amremirate03@gmail.com',
@@ -56,85 +56,12 @@ class PoncaSeeder extends Seeder
             'role' => 'ADMIN',
             'is_active' => true,
             'gaji_perhari' => 200000,
-            'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+            'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
             'jam_masuk_kerja' => '08:00',
             'jam_keluar_kerja' => '17:00',
             'master_lokasi_id' => $pabrikHq->id,
             'face_reverification_status' => 'NONE',
         ]);
-
-        // 4. Seed 1 Dummy Karyawan (Budi Santoso) dengan Data Absensi & Gaji 1 Bulan
-        $karyawanNikSuffix = '002';
-        $karyawanNik = $prefix . $karyawanNikSuffix;
-        $karyawan = User::create([
-            'nik' => $karyawanNik,
-            'email' => 'budi.santoso@poncafood.com',
-            'nama' => 'Budi Santoso',
-            'jabatan' => 'Staff Produksi',
-            'password' => Hash::make('PoncaAbsensi002'),
-            'role' => 'KARYAWAN',
-            'is_active' => true,
-            'gaji_perhari' => 150000,
-            'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
-            'jam_masuk_kerja' => '08:00',
-            'jam_keluar_kerja' => '17:00',
-            'master_lokasi_id' => $pabrikHq->id,
-            'face_reverification_status' => 'APPROVED',
-        ]);
-
-        // Seed Absensi 1 Bulan Terakhir (30 Hari ke Belakang)
-        $today = Carbon::now('Asia/Jakarta');
-        for ($i = 30; $i >= 1; $i--) {
-            $date = $today->copy()->subDays($i);
-            
-            // Skip hari Minggu
-            if ($date->isSunday()) {
-                continue;
-            }
-
-            $dateStr = $date->format('Y-m-d');
-            
-            // Hari ke-5 dan 15: Izin (cukup insert ke izins)
-            if ($i == 5 || $i == 15) {
-                Izin::create([
-                    'user_id' => $karyawan->id,
-                    'tanggal' => $dateStr,
-                    'jenis_izin' => 'SAKIT',
-                    'deskripsi' => 'Demam dan flu ringan',
-                    'status' => 'APPROVED',
-                ]);
-            } 
-            // Hari ke-8 dan 22: Terlambat
-            elseif ($i == 8 || $i == 22) {
-                Absensi::create([
-                    'user_id' => $karyawan->id,
-                    'master_lokasi_id' => $pabrikHq->id,
-                    'tanggal' => $dateStr,
-                    'waktu_masuk' => Carbon::parse("$dateStr 08:25:00"),
-                    'waktu_keluar' => Carbon::parse("$dateStr 17:05:00"),
-                    'lat_masuk' => -6.200000,
-                    'lng_masuk' => 106.816667,
-                    'status' => 'TERLAMBAT',
-                ]);
-            }
-            // Hari ke-12: Alpa (Tidak Ada Presensi)
-            elseif ($i == 12) {
-                // Jangan buat record absensi untuk mensimulasikan Alpa
-            }
-            // Hari lainnya: Tepat Waktu
-            else {
-                Absensi::create([
-                    'user_id' => $karyawan->id,
-                    'master_lokasi_id' => $pabrikHq->id,
-                    'tanggal' => $dateStr,
-                    'waktu_masuk' => Carbon::parse("$dateStr 07:50:00"),
-                    'waktu_keluar' => Carbon::parse("$dateStr 17:00:00"),
-                    'lat_masuk' => -6.200000,
-                    'lng_masuk' => 106.816667,
-                    'status' => 'TEPAT_WAKTU',
-                ]);
-            }
-        }
     }
 }
 
