@@ -148,6 +148,7 @@ class AdminController extends Controller
         $latitude = $request->input('latitude');
         $longitude = $request->input('longitude');
         $radius = $request->input('radius', 100);
+        $timezone = $request->input('timezone', 'Asia/Jakarta');
 
         if (!$namaPlace || $latitude === null || $longitude === null) {
             return response()->json(['error' => 'Nama lokasi, latitude, dan longitude wajib diisi'], 400);
@@ -157,6 +158,10 @@ class AdminController extends Controller
             $tipe = 'OUTLET';
         }
 
+        if (!in_array($timezone, ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura'])) {
+            $timezone = 'Asia/Jakarta';
+        }
+
         $lokasi = MasterLokasi::create([
             'nama_place' => $namaPlace,
             'tipe' => $tipe,
@@ -164,6 +169,7 @@ class AdminController extends Controller
             'latitude' => (float) $latitude,
             'longitude' => (float) $longitude,
             'radius' => (float) $radius,
+            'timezone' => $timezone,
             'is_active' => true,
         ]);
 
@@ -186,10 +192,15 @@ class AdminController extends Controller
         $latitude = $request->input('latitude', $lokasi->latitude);
         $longitude = $request->input('longitude', $lokasi->longitude);
         $radius = $request->input('radius', $lokasi->radius);
+        $timezone = $request->input('timezone', $lokasi->timezone);
         $isActive = $request->input('is_active');
 
         if (!in_array($tipe, ['PABRIK', 'OUTLET', 'AREA_PEMASARAN'])) {
             $tipe = $lokasi->tipe;
+        }
+
+        if (!in_array($timezone, ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura'])) {
+            $timezone = $lokasi->timezone;
         }
 
         $lokasi->update([
@@ -199,6 +210,7 @@ class AdminController extends Controller
             'latitude' => (float) $latitude,
             'longitude' => (float) $longitude,
             'radius' => (float) $radius,
+            'timezone' => $timezone,
             'is_active' => $isActive !== null ? (bool) $isActive : $lokasi->is_active,
         ]);
 
@@ -218,12 +230,13 @@ class AdminController extends Controller
         // Count users using this location
         $userCount = User::where('master_lokasi_id', $id)->count();
         if ($userCount > 0) {
-            $lokasi->update(['is_active' => false]);
-            return response()->json(['message' => 'Lokasi sedang digunakan oleh karyawan, status diubah menjadi Nonaktif.']);
+            return response()->json([
+                'error' => "Lokasi ini sedang digunakan oleh {$userCount} karyawan. Ubah lokasi penugasan karyawan terlebih dahulu sebelum menghapus."
+            ], 400);
         }
 
         $lokasi->delete();
-        return response()->json(['message' => 'Master lokasi berhasil dihapus permanen']);
+        return response()->json(['message' => 'Master lokasi berhasil dihapus']);
     }
 
     /**
