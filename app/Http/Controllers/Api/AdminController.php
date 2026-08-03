@@ -242,7 +242,7 @@ class AdminController extends Controller
             return response()->json([
                 'data' => [
                     'id' => 1,
-                    'nama_place' => 'PONCA FOOD HQ',
+                    'nama_place' => 'Pabrik Utama',
                     'tipe' => 'PABRIK',
                     'latitude' => -6.3351622,
                     'longitude' => 106.7692376,
@@ -295,7 +295,7 @@ class AdminController extends Controller
             $masterLokasi->update($data);
         } else {
             $masterLokasi = MasterLokasi::create(array_merge([
-                'nama_place' => $namaPlace ?? 'PONCA FOOD HQ',
+                'nama_place' => $namaPlace ?? 'Pabrik Utama',
                 'tipe' => $tipe ?? 'PABRIK',
             ], $data));
         }

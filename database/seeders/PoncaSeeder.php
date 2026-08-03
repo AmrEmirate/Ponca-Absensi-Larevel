@@ -26,10 +26,10 @@ class PoncaSeeder extends Seeder
         User::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 1. Seed Master Lokasi (Pabrik Utama 1)
+        // 1. Seed Master Lokasi (Pabrik Utama)
         $pabrikHq = MasterLokasi::create([
             'id' => 1,
-            'nama_place' => 'PONCA FOOD HQ (Pabrik Utama 1)',
+            'nama_place' => 'Pabrik Utama',
             'tipe' => 'PABRIK',
             'alamat' => 'Jl. Industri Food No. 1, Jakarta',
             'latitude' => -6.200000,
