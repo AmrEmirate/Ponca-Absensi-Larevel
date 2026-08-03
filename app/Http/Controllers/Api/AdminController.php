@@ -54,19 +54,35 @@ class AdminController extends Controller
             });
         }
 
+        // Query approved Izins in date range to map permission notes
+        $approvedIzins = \App\Models\Izin::where('tanggal', '>=', $start)
+            ->where('tanggal', '<=', $end)
+            ->where('status', 'APPROVED')
+            ->get()
+            ->keyBy(function ($item) {
+                $t = $item->tanggal ? (is_string($item->tanggal) ? substr($item->tanggal, 0, 10) : $item->tanggal->format('Y-m-d')) : '';
+                return $item->user_id . '_' . $t;
+            });
+
         $absensiRecords = $query->orderBy('tanggal', 'desc')->get();
         $results = collect();
 
         $presentUserDates = [];
         foreach ($absensiRecords as $absen) {
             $dateStr = $absen->tanggal ? $absen->tanggal->format('Y-m-d') : '';
-            $presentUserDates[$absen->user_id . '_' . $dateStr] = true;
+            $key = $absen->user_id . '_' . $dateStr;
+            $presentUserDates[$key] = true;
+
+            $izinInfo = $approvedIzins->get($key);
+            $keteranganIzin = $izinInfo ? "{$izinInfo->jenis_izin}: {$izinInfo->deskripsi}" : null;
+
             $results->push([
                 'id' => $absen->id,
                 'tanggal' => $absen->tanggal ? $absen->tanggal->format('Y-m-d') : null,
                 'waktuMasuk' => $absen->waktu_masuk ? Carbon::parse($absen->waktu_masuk)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
                 'waktuKeluar' => $absen->waktu_keluar ? Carbon::parse($absen->waktu_keluar)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
                 'status' => $absen->status,
+                'keteranganIzin' => $keteranganIzin,
                 'user' => $absen->user ? [
                     'nik' => $absen->user->nik,
                     'nama' => $absen->user->nama,
@@ -76,7 +92,7 @@ class AdminController extends Controller
             ]);
         }
 
-        // If single-day report query, include active employees who haven't checked in as ALPA
+        // If single-day report query, include active employees who haven't checked in
         if ($start === $end) {
             $empQuery = User::where('role', 'KARYAWAN')->where('is_active', true);
             if ($locationId) {
@@ -87,12 +103,17 @@ class AdminController extends Controller
             foreach ($activeEmployees as $emp) {
                 $key = $emp->id . '_' . $start;
                 if (!isset($presentUserDates[$key])) {
+                    $izinInfo = $approvedIzins->get($key);
+                    $status = $izinInfo ? strtoupper($izinInfo->jenis_izin ?? 'IZIN') : 'ALPA';
+                    $keteranganIzin = $izinInfo ? "{$izinInfo->jenis_izin}: {$izinInfo->deskripsi}" : null;
+
                     $results->push([
                         'id' => -$emp->id,
                         'tanggal' => Carbon::parse($start)->toISOString(),
                         'waktuMasuk' => null,
                         'waktuKeluar' => null,
-                        'status' => 'ALPA',
+                        'status' => $status,
+                        'keteranganIzin' => $keteranganIzin,
                         'user' => [
                             'nik' => $emp->nik,
                             'nama' => $emp->nama,

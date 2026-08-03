@@ -322,13 +322,30 @@ class AttendanceController extends Controller
             $query->limit($limit);
         }
 
-        $history = $query->get()->map(function ($absen) {
+        $historyRecords = $query->get();
+
+        $userIds = $historyRecords->pluck('user_id')->unique()->toArray();
+        $approvedIzins = \App\Models\Izin::whereIn('user_id', $userIds)
+            ->where('status', 'APPROVED')
+            ->get()
+            ->keyBy(function ($item) {
+                $t = $item->tanggal ? (is_string($item->tanggal) ? substr($item->tanggal, 0, 10) : $item->tanggal->format('Y-m-d')) : '';
+                return $item->user_id . '_' . $t;
+            });
+
+        $history = $historyRecords->map(function ($absen) use ($approvedIzins) {
+            $dateStr = $absen->tanggal ? (is_string($absen->tanggal) ? substr($absen->tanggal, 0, 10) : $absen->tanggal->format('Y-m-d')) : '';
+            $key = $absen->user_id . '_' . $dateStr;
+            $izinInfo = $approvedIzins->get($key);
+            $keteranganIzin = $izinInfo ? "{$izinInfo->jenis_izin}: {$izinInfo->deskripsi}" : null;
+
             return [
                 'id' => $absen->id,
-                'tanggal' => $absen->tanggal ? $absen->tanggal->format('Y-m-d') : '',
+                'tanggal' => $dateStr,
                 'waktuMasuk' => $absen->waktu_masuk ? Carbon::parse($absen->waktu_masuk)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
                 'waktuKeluar' => $absen->waktu_keluar ? Carbon::parse($absen->waktu_keluar)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
                 'status' => $absen->status,
+                'keteranganIzin' => $keteranganIzin,
                 'user' => $absen->user ? ['nama' => $absen->user->nama] : null,
             ];
         });
