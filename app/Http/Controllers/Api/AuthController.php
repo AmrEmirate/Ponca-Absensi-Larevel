@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\MasterLokasi;
 use App\Services\FacePlusPlusService;
 use App\Services\CloudinaryService;
 use App\Http\Requests\LoginRequest;
@@ -75,7 +76,16 @@ class AuthController extends Controller
         $jwtUser = $request->attributes->get('user');
         $user = User::find($jwtUser->id);
 
-        $masterLokasi = $user->master_lokasi_id ? MasterLokasi::find($user->master_lokasi_id) : MasterLokasi::first();
+        if (!$user) {
+            return response()->json(['error' => 'Pengguna tidak ditemukan'], 404);
+        }
+
+        try {
+            $masterLokasi = $user->master_lokasi_id ? MasterLokasi::find($user->master_lokasi_id) : MasterLokasi::first();
+        } catch (\Exception $e) {
+            $masterLokasi = null;
+        }
+
         $tz = $masterLokasi ? $masterLokasi->timezone : 'Asia/Jakarta';
         $tzAbbr = $masterLokasi ? $masterLokasi->timezone_abbr : 'WIB';
         $lokasiNama = $masterLokasi ? $masterLokasi->nama_place : 'Pabrik Utama';
