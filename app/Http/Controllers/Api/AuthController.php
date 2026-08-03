@@ -75,9 +75,10 @@ class AuthController extends Controller
         $jwtUser = $request->attributes->get('user');
         $user = User::find($jwtUser->id);
 
-        if (!$user) {
-            return response()->json(['error' => 'User tidak ditemukan'], 404);
-        }
+        $masterLokasi = $user->master_lokasi_id ? MasterLokasi::find($user->master_lokasi_id) : MasterLokasi::first();
+        $tz = $masterLokasi ? $masterLokasi->timezone : 'Asia/Jakarta';
+        $tzAbbr = $masterLokasi ? $masterLokasi->timezone_abbr : 'WIB';
+        $lokasiNama = $masterLokasi ? $masterLokasi->nama_place : 'Pabrik Utama';
 
         return response()->json([
             'id' => $user->id,
@@ -91,7 +92,10 @@ class AuthController extends Controller
             'jamKeluarKerja' => $user->jam_keluar_kerja,
             'faceReverificationStatus' => $user->face_reverification_status,
             'createdAt' => $user->created_at ? $user->created_at->toISOString() : null,
-            'serverTime' => \Carbon\Carbon::now('Asia/Jakarta')->toIso8601String(),
+            'serverTime' => \Carbon\Carbon::now($tz)->toIso8601String(),
+            'timezone' => $tz,
+            'timezoneAbbr' => $tzAbbr,
+            'masterLokasiNama' => $lokasiNama,
         ]);
     }
 

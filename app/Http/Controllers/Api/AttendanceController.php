@@ -87,6 +87,14 @@ class AttendanceController extends Controller
             return response()->json(['error' => 'Master lokasi belum dikonfigurasi oleh Admin.'], 500);
         }
 
+        $wibTime = Carbon::now($masterLokasi->timezone);
+        $hour = $wibTime->hour;
+        if ($hour >= 0 && $hour < 5) {
+            return response()->json([
+                'error' => "Sistem absensi sedang ditutup (00:00 - 05:00 {$masterLokasi->timezone_abbr}). Anda baru bisa absen kembali pada jam 5 pagi."
+            ], 403);
+        }
+
         // 2. Lapis 1: Geofencing Validation
         $distance = GeoService::getDistanceInMeters((float)$latitude, (float)$longitude, $masterLokasi->latitude, $masterLokasi->longitude);
         if ($distance > $masterLokasi->radius) {
@@ -148,7 +156,7 @@ class AttendanceController extends Controller
             'scanner_id' => $scannerId,
             'master_lokasi_id' => $masterLokasi->id,
             'tanggal' => $startOfDay,
-            'waktu_masuk' => Carbon::now('Asia/Jakarta'),
+            'waktu_masuk' => Carbon::now($masterLokasi->timezone),
             'lat_masuk' => (float)$latitude,
             'lng_masuk' => (float)$longitude,
             'foto_masuk' => null,
@@ -219,6 +227,8 @@ class AttendanceController extends Controller
             return response()->json(['error' => 'Master lokasi belum dikonfigurasi oleh Admin.'], 500);
         }
 
+        $wibTime = Carbon::now($masterLokasi->timezone);
+
         $distance = GeoService::getDistanceInMeters((float)$latitude, (float)$longitude, $masterLokasi->latitude, $masterLokasi->longitude);
         if ($distance > $masterLokasi->radius) {
             return response()->json([
@@ -275,7 +285,7 @@ class AttendanceController extends Controller
         }
 
         $absenKeluar = tap($existingAbsen)->update([
-            'waktu_keluar' => Carbon::now('Asia/Jakarta'),
+            'waktu_keluar' => Carbon::now($masterLokasi->timezone),
             'foto_keluar' => null,
         ]);
 

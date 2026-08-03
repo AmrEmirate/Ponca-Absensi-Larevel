@@ -35,6 +35,7 @@ class MasterLokasi extends Model
         'latitude',
         'longitude',
         'radius',
+        'timezone',
         'is_active',
     ];
 
@@ -45,11 +46,34 @@ class MasterLokasi extends Model
         'is_active' => 'boolean',
     ];
 
-    protected $appends = ['namaPlace'];
+    protected $appends = ['namaPlace', 'timezoneAbbr'];
 
     public function getNamaPlaceAttribute()
     {
         return $this->attributes['nama_place'] ?? '';
+    }
+
+    public function getTimezoneAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        $lng = $this->attributes['longitude'] ?? 106.8;
+        if ($lng >= 124.0) {
+            return 'Asia/Jayapura';
+        } elseif ($lng >= 114.0) {
+            return 'Asia/Makassar';
+        }
+        return 'Asia/Jakarta';
+    }
+
+    public function getTimezoneAbbrAttribute()
+    {
+        return match ($this->timezone) {
+            'Asia/Makassar' => 'WITA',
+            'Asia/Jayapura' => 'WIT',
+            default => 'WIB',
+        };
     }
 
     public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
