@@ -40,10 +40,10 @@ class PoncaSeeder extends Seeder
         // 2. Seed User ADMIN (Admin Pabrik Utama 1)
         User::create([
             'nik' => 'ADM001',
-            'email' => 'admin@poncafood.com',
-            'nama' => 'Admin Ponca Food',
-            'jabatan' => 'Admin Sistem',
-            'password' => Hash::make('admin123'),
+            'email' => 'amremirate03@gmail.com',
+            'nama' => 'Amr Emirate',
+            'jabatan' => 'Admin Utama',
+            'password' => Hash::make('PoncaAbsensi001'),
             'role' => 'ADMIN',
             'is_active' => true,
             'gaji_perhari' => 200000,
