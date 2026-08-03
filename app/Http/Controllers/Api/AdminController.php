@@ -79,8 +79,8 @@ class AdminController extends Controller
             $results->push([
                 'id' => $absen->id,
                 'tanggal' => $absen->tanggal ? $absen->tanggal->format('Y-m-d') : null,
-                'waktuMasuk' => $absen->waktu_masuk ? Carbon::parse($absen->waktu_masuk)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
-                'waktuKeluar' => $absen->waktu_keluar ? Carbon::parse($absen->waktu_keluar)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
+                'waktuMasuk' => $absen->waktu_masuk ? $absen->waktu_masuk->format('Y-m-d\TH:i:sP') : null,
+                'waktuKeluar' => $absen->waktu_keluar ? $absen->waktu_keluar->format('Y-m-d\TH:i:sP') : null,
                 'status' => $absen->status,
                 'keteranganIzin' => $keteranganIzin,
                 'user' => [

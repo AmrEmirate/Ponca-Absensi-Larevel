@@ -91,6 +91,7 @@ class AuthController extends Controller
             'jamKeluarKerja' => $user->jam_keluar_kerja,
             'faceReverificationStatus' => $user->face_reverification_status,
             'createdAt' => $user->created_at ? $user->created_at->toISOString() : null,
+            'serverTime' => \Carbon\Carbon::now('Asia/Jakarta')->toIso8601String(),
         ]);
     }
 
