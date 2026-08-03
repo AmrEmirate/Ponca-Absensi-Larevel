@@ -83,12 +83,12 @@ class AdminController extends Controller
                 'waktuKeluar' => $absen->waktu_keluar ? Carbon::parse($absen->waktu_keluar)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i:sP') : null,
                 'status' => $absen->status,
                 'keteranganIzin' => $keteranganIzin,
-                'user' => $absen->user ? [
-                    'nik' => $absen->user->nik,
-                    'nama' => $absen->user->nama,
-                    'jabatan' => $absen->user->jabatan,
-                    'fotoProfil' => $absen->user->foto_profil,
-                ] : null,
+                'user' => [
+                    'nik' => $absen->user ? ($absen->user->nik ?? '-') : '-',
+                    'nama' => $absen->user ? ($absen->user->nama ?? 'Karyawan (Dihapus)') : 'Karyawan (Dihapus)',
+                    'jabatan' => $absen->user ? $absen->user->jabatan : '-',
+                    'fotoProfil' => $absen->user ? $absen->user->foto_profil : null,
+                ],
             ]);
         }
 
