@@ -921,6 +921,19 @@ class AdminController extends Controller
             'foto_referensi' => null, // Hapus data foto sampel wajah lama
             'face_reverification_status' => 'APPROVED'
         ]);
+
+        try {
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'title' => "🔓 Verifikasi Wajah Disetujui",
+                'message' => "Permintaan verifikasi ulang wajah Anda disetujui Admin. Silakan daftarkan sampel foto wajah baru.",
+                'type' => 'FACE_STATUS',
+                'is_read' => false,
+            ]);
+        } catch (\Exception $e) {
+            // Ignore notification error
+        }
+
         return response()->json(['message' => 'Permintaan verifikasi wajah disetujui']);
     }
 
@@ -934,6 +947,19 @@ class AdminController extends Controller
             return response()->json(['error' => 'Pengguna tidak ditemukan.'], 404);
         }
         $user->update(['face_reverification_status' => 'NONE']);
+
+        try {
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'title' => "❌ Verifikasi Wajah Ditolak",
+                'message' => "Permintaan verifikasi ulang wajah Anda ditolak oleh Admin.",
+                'type' => 'FACE_STATUS',
+                'is_read' => false,
+            ]);
+        } catch (\Exception $e) {
+            // Ignore notification error
+        }
+
         return response()->json(['message' => 'Permintaan verifikasi wajah ditolak']);
     }
 

@@ -197,6 +197,20 @@ class AuthController extends Controller
             'face_reverification_status' => $status,
         ]);
 
+        if ($status === 'PENDING') {
+            try {
+                \App\Models\Notification::create([
+                    'user_id' => null, // Notifikasi untuk Admin
+                    'title' => "👤 Permintaan Verifikasi Wajah",
+                    'message' => "{$user->nama} mengajukan verifikasi ulang sampel foto wajah.",
+                    'type' => 'FACE_REVERIFY',
+                    'is_read' => false,
+                ]);
+            } catch (\Exception $e) {
+                // Ignore notification error
+            }
+        }
+
         return response()->json(['message' => 'Pengajuan verifikasi ulang wajah berhasil dikirim']);
     }
 

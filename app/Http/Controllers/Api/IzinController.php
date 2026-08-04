@@ -81,6 +81,21 @@ class IzinController extends Controller
             'tanggal' => $tanggalValue,
         ]);
 
+        // Buat notifikasi untuk Admin
+        try {
+            $userObj = User::find($userId);
+            $namaUser = $userObj ? $userObj->nama : "Karyawan";
+            \App\Models\Notification::create([
+                'user_id' => null, // null = Notifikasi untuk semua Admin
+                'title' => "📩 Pengajuan Izin Baru",
+                'message' => "{$namaUser} mengajukan {$jenisIzin}: \"{$deskripsi}\"",
+                'type' => 'IZIN_NEW',
+                'is_read' => false,
+            ]);
+        } catch (\Exception $e) {
+            // Ignore notification error
+        }
+
         return response()->json(['message' => 'Pengajuan izin berhasil dibuat.', 'data' => $newIzin]);
     }
 
@@ -195,6 +210,21 @@ class IzinController extends Controller
                 ->where('tanggal', $izin->tanggal->toDateString())
                 ->whereIn('status', ['IZIN', 'SAKIT', 'CUTI'])
                 ->delete();
+        }
+
+        // Buat notifikasi untuk Karyawan terkait
+        try {
+            $isApproved = $status === 'APPROVED';
+            $tglStr = $izin->tanggal ? $izin->tanggal->format('d M Y') : 'tanggal pengajuan';
+            \App\Models\Notification::create([
+                'user_id' => $izin->user_id,
+                'title' => $isApproved ? "✅ Status Izin Disetujui" : "❌ Status Izin Ditolak",
+                'message' => "Pengajuan izin {$izin->jenis_izin} Anda tanggal {$tglStr} telah " . ($isApproved ? 'DISETUJUI' : 'DITOLAK') . " oleh Admin.",
+                'type' => 'IZIN_STATUS',
+                'is_read' => false,
+            ]);
+        } catch (\Exception $e) {
+            // Ignore notification error
         }
 
         return response()->json([

@@ -90,3 +90,10 @@ Route::prefix('izin')->middleware(JwtAuth::class)->group(function () {
         Route::put('/{id}/status', [IzinController::class, 'updateIzinStatus']);
     });
 });
+
+// === Notification Routes ===
+Route::prefix('notifications')->middleware(JwtAuth::class)->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+    Route::post('/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+});
