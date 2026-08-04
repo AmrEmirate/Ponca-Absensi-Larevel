@@ -530,7 +530,20 @@ class AdminController extends Controller
             $data['password'] = Hash::make($password);
         }
         if ($isActive !== null) {
-            $data['is_active'] = (bool) $isActive;
+            $newIsActive = (bool) $isActive;
+            if (!$newIsActive && ($user->role === 'ADMIN' || str_contains(strtolower($user->jabatan ?? ''), 'admin'))) {
+                $otherActiveAdmins = User::where(function ($q) {
+                    $q->where('role', 'ADMIN')
+                      ->orWhere('jabatan', 'LIKE', '%admin%');
+                })->where('is_active', true)->where('id', '!=', $user->id)->count();
+
+                if ($otherActiveAdmins < 1) {
+                    return response()->json([
+                        'error' => 'Satu-satunya akun Admin aktif di sistem tidak dapat dinonaktifkan.'
+                    ], 400);
+                }
+            }
+            $data['is_active'] = $newIsActive;
         }
         if ($gajiPerhari !== null) {
             $data['gaji_perhari'] = (int) $gajiPerhari;
@@ -562,6 +575,19 @@ class AdminController extends Controller
     public function deleteEmployee(int $id)
     {
         $user = User::findOrFail($id);
+
+        if ($user->role === 'ADMIN' || str_contains(strtolower($user->jabatan ?? ''), 'admin')) {
+            $otherActiveAdmins = User::where(function ($q) {
+                $q->where('role', 'ADMIN')
+                  ->orWhere('jabatan', 'LIKE', '%admin%');
+            })->where('is_active', true)->where('id', '!=', $user->id)->count();
+
+            if ($otherActiveAdmins < 1) {
+                return response()->json([
+                    'error' => 'Satu-satunya akun Admin aktif di sistem tidak dapat dinonaktifkan.'
+                ], 400);
+            }
+        }
 
         $user->update(['is_active' => false]);
         return response()->json(['message' => 'Karyawan berhasil dinonaktifkan. Data dan NIK tetap tersimpan']);

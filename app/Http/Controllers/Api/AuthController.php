@@ -25,12 +25,16 @@ class AuthController extends Controller
 
         $user = User::where('email', $emailOrNik)->orWhere('nik', $emailOrNik)->first();
 
-        if (!$user || !$user->is_active) {
-            return response()->json(['error' => 'Kredensial tidak valid atau akun dinonaktifkan'], 401);
+        if (!$user) {
+            return response()->json(['error' => 'Email/NIK atau password salah'], 401);
+        }
+
+        if (!$user->is_active) {
+            return response()->json(['error' => 'Akun Anda telah dinonaktifkan. Silakan hubungi Administrator.'], 403);
         }
 
         if (!Hash::check($password, $user->password)) {
-            return response()->json(['error' => 'Kredensial tidak valid'], 401);
+            return response()->json(['error' => 'Email/NIK atau password salah'], 401);
         }
 
         $secret = config('services.jwt.secret');
