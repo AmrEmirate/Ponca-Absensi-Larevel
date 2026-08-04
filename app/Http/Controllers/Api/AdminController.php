@@ -449,6 +449,11 @@ class AdminController extends Controller
             return response()->json(['error' => 'Email/Username atau NIK sudah terdaftar pada pengguna lain'], 400);
         }
 
+        $gajiPerhari = $request->input('gajiPerhari') ?? $request->input('gaji_perhari') ?? 0;
+        $hariKerja = $request->input('hariKerja') ?? $request->input('hari_kerja') ?? 'Senin,Selasa,Rabu,Kamis,Jumat';
+        $jamMasukKerja = $request->input('jamMasukKerja') ?? $request->input('jam_masuk_kerja') ?? $request->input('shift_masuk') ?? '08:00';
+        $jamKeluarKerja = $request->input('jamKeluarKerja') ?? $request->input('jam_keluar_kerja') ?? $request->input('shift_keluar') ?? '17:00';
+
         $user = User::create([
             'nik' => $nik,
             'nama' => $nama ?? 'User',
@@ -456,10 +461,11 @@ class AdminController extends Controller
             'password' => Hash::make($password),
             'jabatan' => $jabatan,
             'role' => $role,
-            'gaji_perhari' => $request->input('gaji_perhari', 0),
+            'gaji_perhari' => (int) $gajiPerhari,
+            'hari_kerja' => $hariKerja,
+            'jam_masuk_kerja' => $jamMasukKerja,
+            'jam_keluar_kerja' => $jamKeluarKerja,
             'master_lokasi_id' => $masterLokasiId,
-            'shift_masuk' => $request->input('shift_masuk', '08:00'),
-            'shift_keluar' => $request->input('shift_keluar', '17:00'),
             'is_active' => true,
         ]);
 
@@ -708,16 +714,23 @@ class AdminController extends Controller
             ->orderBy('nama')
             ->get();
 
+        $todayStr = Carbon::now('Asia/Jakarta')->toDateString();
         $startCarbon = Carbon::parse($start);
         $endCarbon = Carbon::parse($end);
         $totalDays = $startCarbon->diffInDays($endCarbon) + 1;
 
-        $reportData = $users->map(function ($user) use ($totalDays, $start, $end) {
+        $reportData = $users->map(function ($user) use ($totalDays, $todayStr, $end, $start) {
             $totalHadir = 0;
             $totalTelat = 0;
             $totalIzin = 0;
+            $hasAttendedToday = false;
 
             foreach ($user->absensi as $absen) {
+                $dateStr = $absen->tanggal ? $absen->tanggal->format('Y-m-d') : '';
+                if ($dateStr === $todayStr) {
+                    $hasAttendedToday = true;
+                }
+
                 if (in_array($absen->status, ['TEPAT_WAKTU', 'TERLAMBAT'])) {
                     $totalHadir++;
                 }
@@ -729,7 +742,10 @@ class AdminController extends Controller
                 }
             }
 
-            $totalAlpa = max(0, $totalDays - $totalHadir - $totalIzin);
+            // Jika periode laporan mencakup Hari Ini dan hari ini belum selesai (belum absen),
+            // jangan hitung hari ini sebagai ALPA dalam rekap gaji harian
+            $effectiveDays = ($end >= $todayStr && !$hasAttendedToday) ? max(0, $totalDays - 1) : $totalDays;
+            $totalAlpa = max(0, $effectiveDays - $totalHadir - $totalIzin);
 
             return [
                 'id' => $user->id,
