@@ -55,7 +55,7 @@ class PoncaSeeder extends Seeder
             'password' => Hash::make($defaultPassword),
             'role' => 'ADMIN',
             'is_active' => true,
-            'gaji_perhari' => 200000,
+            'gaji_perhari' => 75000,
             'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
             'jam_masuk_kerja' => '08:00',
             'jam_keluar_kerja' => '17:00',
