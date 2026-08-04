@@ -26,7 +26,7 @@ class PoncaSeeder extends Seeder
         User::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 1. Seed Master Lokasi (Pabrik Utama)
+        // 1. Seed Master Lokasi
         $pabrikHq = MasterLokasi::create([
             'id' => 1,
             'nama_place' => 'Pabrik Utama',
@@ -38,30 +38,91 @@ class PoncaSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 2. Generate NIK otomatis format Bulan-Tahun-Urutan (misal: 0826001 / 1126001) dan password default
-        $now = Carbon::now('Asia/Jakarta');
-        $prefix = $now->format('my'); // Format bulan & tahun (misal: 0826)
-        $counter = 1;
-        $nikSuffix = str_pad((string)$counter, 3, '0', STR_PAD_LEFT); // '001'
-        $nik = $prefix . $nikSuffix; // '0826001' (atau '1126001')
-        $defaultPassword = 'PoncaAbsensi' . $nikSuffix; // 'PoncaAbsensi001'
+        $outletKebayoran = MasterLokasi::create([
+            'id' => 2,
+            'nama_place' => 'Outlet Kebayoran',
+            'tipe' => 'OUTLET',
+            'alamat' => 'Jl. Kebayoran Baru No. 12, Jakarta Selatan',
+            'latitude' => -6.240000,
+            'longitude' => 106.780000,
+            'radius' => 150.0,
+            'is_active' => true,
+        ]);
 
-        // 3. Seed User ADMIN (Admin Pabrik Utama 1)
+        // 2. Generate Prefix NIK (Bulan-Tahun)
+        $now = Carbon::now('Asia/Jakarta');
+        $prefix = $now->format('my'); // e.g. 0826
+
+        // 3. Seed User ADMIN (Admin Utama)
+        $nikAdmin = $prefix . '001';
         User::create([
-            'nik' => $nik,
+            'nik' => $nikAdmin,
             'email' => 'amremirate03@gmail.com',
             'nama' => 'Amr Emirate',
             'jabatan' => 'Admin Utama',
-            'password' => Hash::make($defaultPassword),
+            'password' => Hash::make('PoncaAbsensi001'),
             'role' => 'ADMIN',
             'is_active' => true,
-            'gaji_perhari' => 75000,
+            'gaji_perhari' => 200000,
             'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
             'jam_masuk_kerja' => '08:00',
             'jam_keluar_kerja' => '17:00',
             'master_lokasi_id' => $pabrikHq->id,
             'face_reverification_status' => 'NONE',
         ]);
+
+        // 4. Seed User SCANNER (Perangkat Pemindai Pabrik Utama)
+        $nikScanner = $prefix . '002';
+        User::create([
+            'nik' => $nikScanner,
+            'email' => 'scanner_pabrik1',
+            'nama' => 'Scanner Pabrik Utama',
+            'jabatan' => 'Scanner',
+            'password' => Hash::make('PoncaAbsensi002'),
+            'role' => 'SCANNER',
+            'is_active' => true,
+            'gaji_perhari' => 0,
+            'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+            'jam_masuk_kerja' => '08:00',
+            'jam_keluar_kerja' => '17:00',
+            'master_lokasi_id' => $pabrikHq->id,
+            'face_reverification_status' => 'NONE',
+        ]);
+
+        // 5. Seed User KARYAWAN 1 (Budi Santoso)
+        $nikBudi = $prefix . '003';
+        User::create([
+            'nik' => $nikBudi,
+            'email' => 'budi@gmail.com',
+            'nama' => 'Budi Santoso',
+            'jabatan' => 'Operator Produksi',
+            'password' => Hash::make('PoncaAbsensi003'),
+            'role' => 'KARYAWAN',
+            'is_active' => true,
+            'gaji_perhari' => 150000,
+            'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
+            'jam_masuk_kerja' => '08:00',
+            'jam_keluar_kerja' => '17:00',
+            'master_lokasi_id' => $pabrikHq->id,
+            'face_reverification_status' => 'NONE',
+        ]);
+
+        // 6. Seed User KARYAWAN 2 (Siti Rahma)
+        $nikSiti = $prefix . '004';
+        User::create([
+            'nik' => $nikSiti,
+            'email' => 'siti@gmail.com',
+            'nama' => 'Siti Rahma',
+            'jabatan' => 'Staff Packhouse',
+            'password' => Hash::make('PoncaAbsensi004'),
+            'role' => 'KARYAWAN',
+            'is_active' => true,
+            'gaji_perhari' => 150000,
+            'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
+            'jam_masuk_kerja' => '08:00',
+            'jam_keluar_kerja' => '17:00',
+            'master_lokasi_id' => $outletKebayoran->id,
+            'face_reverification_status' => 'NONE',
+        ]);
     }
 }
-
