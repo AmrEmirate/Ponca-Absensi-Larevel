@@ -466,7 +466,7 @@ class AdminController extends Controller
         $email = $request->input('email', $user->email);
         $jabatan = $request->input('jabatan', $user->jabatan);
         $password = $request->input('password');
-        $isActive = $request->input('isActive');
+        $isActive = $request->input('is_active') ?? $request->input('isActive');
         $gajiPerhari = $request->input('gajiPerhari');
         $hariKerja = $request->input('hariKerja');
         $jamMasukKerja = $request->input('jamMasukKerja');
@@ -542,16 +542,8 @@ class AdminController extends Controller
             return response()->json(['error' => 'Akun Admin Utama tidak dapat dihapus'], 403);
         }
 
-        $absensiCount = Absensi::where('user_id', $id)->count();
-        $izinCount = \App\Models\Izin::where('user_id', $id)->count();
-
-        if ($absensiCount > 0 || $izinCount > 0) {
-            $user->update(['is_active' => false]);
-            return response()->json(['message' => 'Karyawan memiliki riwayat data, sehingga hanya dinonaktifkan (Soft Delete).']);
-        }
-
-        $user->delete();
-        return response()->json(['message' => 'Karyawan berhasil dihapus permanen']);
+        $user->update(['is_active' => false]);
+        return response()->json(['message' => 'Karyawan berhasil dinonaktifkan. Data dan NIK tetap tersimpan']);
     }
 
     /**
