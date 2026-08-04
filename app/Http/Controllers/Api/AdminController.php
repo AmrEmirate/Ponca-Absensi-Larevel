@@ -531,16 +531,23 @@ class AdminController extends Controller
         }
         if ($isActive !== null) {
             $newIsActive = (bool) $isActive;
-            if (!$newIsActive && ($user->role === 'ADMIN' || str_contains(strtolower($user->jabatan ?? ''), 'admin'))) {
-                $otherActiveAdmins = User::where(function ($q) {
-                    $q->where('role', 'ADMIN')
-                      ->orWhere('jabatan', 'LIKE', '%admin%');
-                })->where('is_active', true)->where('id', '!=', $user->id)->count();
-
-                if ($otherActiveAdmins < 1) {
+            if (!$newIsActive) {
+                if ($user->email === 'amremirate03@gmail.com') {
                     return response()->json([
-                        'error' => 'Satu-satunya akun Admin aktif di sistem tidak dapat dinonaktifkan.'
+                        'error' => 'Akun Admin Utama (amremirate03@gmail.com) tidak dapat dinonaktifkan.'
                     ], 400);
+                }
+                if ($user->role === 'ADMIN' || str_contains(strtolower($user->jabatan ?? ''), 'admin')) {
+                    $otherActiveAdmins = User::where(function ($q) {
+                        $q->where('role', 'ADMIN')
+                          ->orWhere('jabatan', 'LIKE', '%admin%');
+                    })->where('is_active', true)->where('id', '!=', $user->id)->count();
+
+                    if ($otherActiveAdmins < 1) {
+                        return response()->json([
+                            'error' => 'Satu-satunya akun Admin aktif di sistem tidak dapat dinonaktifkan.'
+                        ], 400);
+                    }
                 }
             }
             $data['is_active'] = $newIsActive;
@@ -575,6 +582,12 @@ class AdminController extends Controller
     public function deleteEmployee(int $id)
     {
         $user = User::findOrFail($id);
+
+        if ($user->email === 'amremirate03@gmail.com') {
+            return response()->json([
+                'error' => 'Akun Admin Utama (amremirate03@gmail.com) tidak dapat dinonaktifkan.'
+            ], 400);
+        }
 
         if ($user->role === 'ADMIN' || str_contains(strtolower($user->jabatan ?? ''), 'admin')) {
             $otherActiveAdmins = User::where(function ($q) {
