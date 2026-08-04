@@ -427,7 +427,13 @@ class AdminController extends Controller
         $password = $request->input('password');
 
         $jabatanLower = strtolower((string)$jabatan);
-        $role = $jabatanLower === 'admin' ? 'ADMIN' : ($jabatanLower === 'scanner' ? 'SCANNER' : 'KARYAWAN');
+        if (str_contains($jabatanLower, 'admin')) {
+            $role = 'ADMIN';
+        } elseif (str_contains($jabatanLower, 'scanner')) {
+            $role = 'SCANNER';
+        } else {
+            $role = 'KARYAWAN';
+        }
 
         $masterLokasiId = $request->input('master_lokasi_id') ?? $request->input('masterLokasiId');
         if ($role === 'SCANNER' && empty($nama)) {
@@ -504,7 +510,13 @@ class AdminController extends Controller
         }
 
         $jabatanLower = strtolower($jabatan ?? '');
-        $role = $jabatanLower === 'admin' ? 'ADMIN' : ($jabatanLower === 'scanner' ? 'SCANNER' : 'KARYAWAN');
+        if (str_contains($jabatanLower, 'admin')) {
+            $role = 'ADMIN';
+        } elseif (str_contains($jabatanLower, 'scanner')) {
+            $role = 'SCANNER';
+        } else {
+            $role = 'KARYAWAN';
+        }
 
         $data = [
             'nik' => $nik,
@@ -536,15 +548,6 @@ class AdminController extends Controller
             $data['master_lokasi_id'] = $masterLokasiId ? (int) $masterLokasiId : null;
         }
 
-        if ($user->email === 'amremirate03@gmail.com' || $user->email === 'admin@poncafood.com') {
-            if ($role !== 'ADMIN') {
-                return response()->json(['error' => 'Role akun Admin Utama tidak boleh diubah'], 403);
-            }
-            if (isset($data['is_active']) && $data['is_active'] == false) {
-                return response()->json(['error' => 'Akun Admin Utama tidak boleh dinonaktifkan'], 403);
-            }
-        }
-
         $user->update($data);
 
         return response()->json([
@@ -559,9 +562,6 @@ class AdminController extends Controller
     public function deleteEmployee(int $id)
     {
         $user = User::findOrFail($id);
-        if ($user->email === 'amremirate03@gmail.com') {
-            return response()->json(['error' => 'Akun Admin Utama tidak dapat dihapus'], 403);
-        }
 
         $user->update(['is_active' => false]);
         return response()->json(['message' => 'Karyawan berhasil dinonaktifkan. Data dan NIK tetap tersimpan']);
