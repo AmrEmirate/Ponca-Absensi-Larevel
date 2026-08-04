@@ -392,7 +392,7 @@ class AdminController extends Controller
     {
         $locationId = $request->query('locationId') ?? $request->query('master_lokasi_id');
 
-        $query = User::whereIn('role', ['ADMIN', 'KARYAWAN'])
+        $query = User::whereIn('role', ['ADMIN', 'KARYAWAN', 'SCANNER'])
             ->with('lokasi');
 
         if ($locationId) {
@@ -425,6 +425,16 @@ class AdminController extends Controller
         $email = $request->input('email');
         $jabatan = $request->input('jabatan');
         $password = $request->input('password');
+
+        $jabatanLower = strtolower((string)$jabatan);
+        $role = $jabatanLower === 'admin' ? 'ADMIN' : ($jabatanLower === 'scanner' ? 'SCANNER' : 'KARYAWAN');
+
+        $masterLokasiId = $request->input('master_lokasi_id') ?? $request->input('masterLokasiId');
+        if ($role === 'SCANNER' && empty($nama)) {
+            $masterLokasi = $masterLokasiId ? MasterLokasi::find($masterLokasiId) : null;
+            $nama = 'Scanner ' . ($masterLokasi ? $masterLokasi->nama_place : 'Pabrik');
+        }
+
         if (empty($password)) {
             $nikSuffix = strlen($nik) >= 3 ? substr($nik, -3) : '001';
             $password = 'PoncaAbsensi' . $nikSuffix;
@@ -439,18 +449,15 @@ class AdminController extends Controller
             return response()->json(['error' => 'Email/Username atau NIK sudah terdaftar pada pengguna lain'], 400);
         }
 
-        $jabatanLower = strtolower((string)$jabatan);
-        $role = $jabatanLower === 'admin' ? 'ADMIN' : 'KARYAWAN';
-
         $user = User::create([
             'nik' => $nik,
-            'nama' => $nama,
+            'nama' => $nama ?? 'User',
             'email' => $email,
             'password' => Hash::make($password),
             'jabatan' => $jabatan,
             'role' => $role,
             'gaji_perhari' => $request->input('gaji_perhari', 0),
-            'master_lokasi_id' => $request->input('master_lokasi_id'),
+            'master_lokasi_id' => $masterLokasiId,
             'shift_masuk' => $request->input('shift_masuk', '08:00'),
             'shift_keluar' => $request->input('shift_keluar', '17:00'),
             'is_active' => true,
@@ -458,8 +465,8 @@ class AdminController extends Controller
 
         return response()->json([
             'message' => 'Karyawan berhasil dibuat',
-            'data' => $this->formatEmployee($user),
-        ], 201);
+            'data' => $this->formatEmployee($user->fresh()),
+        ]);
     }
 
     /**
@@ -491,7 +498,7 @@ class AdminController extends Controller
         }
 
         $jabatanLower = strtolower($jabatan ?? '');
-        $role = $jabatanLower === 'admin' ? 'ADMIN' : 'KARYAWAN';
+        $role = $jabatanLower === 'admin' ? 'ADMIN' : ($jabatanLower === 'scanner' ? 'SCANNER' : 'KARYAWAN');
 
         $data = [
             'nik' => $nik,

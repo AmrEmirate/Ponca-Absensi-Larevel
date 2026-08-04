@@ -20,7 +20,7 @@ class CreateEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'required|string|max:255',
+            'nama' => 'nullable|string|max:255',
             'email' => 'required|string|max:255',
             'password' => 'nullable|string|min:6',
             'nik' => 'nullable|string|max:20',
