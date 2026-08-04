@@ -20,11 +20,11 @@ class CreateIzinRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'jenisIzin' => 'required|string|in:IZIN,SAKIT,DINAS,CUTI',
+            'jenisIzin' => 'required|string',
             'deskripsi' => 'required|string|max:1000',
             'fotoBase64' => 'nullable|string',
             'tanggal' => 'nullable|date_format:Y-m-d',
-            'targetUserId' => 'nullable|integer|min:1',
+            'targetUserId' => 'nullable|integer',
         ];
     }
 

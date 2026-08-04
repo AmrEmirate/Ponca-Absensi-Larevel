@@ -20,12 +20,8 @@ class IzinController extends Controller
         $userId = $jwtUser->id;
         $targetUserId = $request->input('targetUserId');
 
-        if ($targetUserId && ($jwtUser->role === 'ADMIN' || $jwtUser->role === 'SCANNER')) {
-            $parsedTarget = (int) $targetUserId;
-            if ($parsedTarget <= 0) {
-                return response()->json(['error' => 'Format ID Pengguna target tidak valid.'], 400);
-            }
-            $userId = $parsedTarget;
+        if ($targetUserId && (int)$targetUserId > 0 && ($jwtUser->role === 'ADMIN' || $jwtUser->role === 'SCANNER')) {
+            $userId = (int) $targetUserId;
         }
 
         $user = \App\Models\User::find($userId);
@@ -33,13 +29,24 @@ class IzinController extends Controller
             return response()->json(['error' => 'Pengguna target tidak ditemukan.'], 404);
         }
 
-        $jenisIzin = $request->input('jenisIzin');
+        $jenisIzinRaw = trim((string)$request->input('jenisIzin'));
         $deskripsi = $request->input('deskripsi');
         $fotoBase64 = $request->input('fotoBase64');
         $tanggal = $request->input('tanggal');
 
-        if (!$jenisIzin || !$deskripsi) {
+        if (!$jenisIzinRaw || !$deskripsi) {
             return response()->json(['error' => 'Jenis Izin dan Deskripsi wajib diisi.'], 400);
+        }
+
+        $jenisUpper = strtoupper($jenisIzinRaw);
+        if (str_contains($jenisUpper, 'SAKIT')) {
+            $jenisIzin = 'SAKIT';
+        } elseif (str_contains($jenisUpper, 'CUTI')) {
+            $jenisIzin = 'CUTI';
+        } elseif (str_contains($jenisUpper, 'DINAS')) {
+            $jenisIzin = 'DINAS';
+        } else {
+            $jenisIzin = 'IZIN';
         }
 
         $fotoUrl = null;
@@ -84,14 +91,10 @@ class IzinController extends Controller
     {
         $jwtUser = $request->attributes->get('user');
         $userId = $jwtUser->id;
-        $targetUserId = $request->query('userId');
+        $targetUserId = $request->query('userId') ?? $request->query('targetUserId');
 
-        if ($targetUserId && $jwtUser->role === 'ADMIN') {
-            $parsedTarget = (int) $targetUserId;
-            if ($parsedTarget <= 0) {
-                return response()->json(['error' => 'Format ID Pengguna target tidak valid.'], 400);
-            }
-            $userId = $parsedTarget;
+        if ($targetUserId && (int)$targetUserId > 0 && ($jwtUser->role === 'ADMIN' || $jwtUser->role === 'SCANNER')) {
+            $userId = (int) $targetUserId;
         }
 
         $data = Izin::where('user_id', $userId)
