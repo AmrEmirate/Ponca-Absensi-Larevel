@@ -100,11 +100,19 @@ class AdminController extends Controller
             }
             $activeEmployees = $empQuery->get();
 
+            $todayStr = Carbon::now('Asia/Jakarta')->toDateString();
+
             foreach ($activeEmployees as $emp) {
                 $key = $emp->id . '_' . $start;
                 if (!isset($presentUserDates[$key])) {
                     $izinInfo = $approvedIzins->get($key);
-                    $status = $izinInfo ? strtoupper($izinInfo->jenis_izin ?? 'IZIN') : 'ALPA';
+                    if ($izinInfo) {
+                        $status = strtoupper($izinInfo->jenis_izin ?? 'IZIN');
+                    } else {
+                        // Jika tanggal laporan adalah hari lalu (< hari ini/lewat 12 malam), jadikan ALPA.
+                        // Jika tanggal laporan adalah hari ini/berjalan, jadikan BELUM_ABSEN.
+                        $status = ($start < $todayStr) ? 'ALPA' : 'BELUM_ABSEN';
+                    }
                     $keteranganIzin = $izinInfo ? "{$izinInfo->jenis_izin}: {$izinInfo->deskripsi}" : null;
 
                     $results->push([
