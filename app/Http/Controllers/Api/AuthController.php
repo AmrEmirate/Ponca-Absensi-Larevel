@@ -181,9 +181,20 @@ class AuthController extends Controller
     public function requestFaceReverification(Request $request)
     {
         $jwtUser = $request->attributes->get('user');
+        $targetUserId = $request->input('targetUserId');
 
-        User::where('id', $jwtUser->id)->update([
-            'face_reverification_status' => 'PENDING',
+        $targetId = ($jwtUser->role === 'ADMIN' && $targetUserId) ? (int)$targetUserId : $jwtUser->id;
+        $user = User::find($targetId);
+
+        if (!$user) {
+            return response()->json(['error' => 'Pengguna tidak ditemukan.'], 404);
+        }
+
+        $status = ($jwtUser->role === 'ADMIN') ? 'APPROVED' : 'PENDING';
+
+        $user->update([
+            'foto_referensi' => null, // Hapus data foto sampel wajah lama agar bersih total
+            'face_reverification_status' => $status,
         ]);
 
         return response()->json(['message' => 'Pengajuan verifikasi ulang wajah berhasil dikirim']);

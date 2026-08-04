@@ -917,7 +917,10 @@ class AdminController extends Controller
         if (!$user) {
             return response()->json(['error' => 'Pengguna tidak ditemukan.'], 404);
         }
-        $user->update(['face_reverification_status' => 'APPROVED']);
+        $user->update([
+            'foto_referensi' => null, // Hapus data foto sampel wajah lama
+            'face_reverification_status' => 'APPROVED'
+        ]);
         return response()->json(['message' => 'Permintaan verifikasi wajah disetujui']);
     }
 
