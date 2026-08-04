@@ -422,6 +422,15 @@ class AdminController extends Controller
             $password = 'PoncaAbsensi' . $nikSuffix;
         }
 
+        $existing = User::withTrashed()->where(function ($q) use ($email, $nik) {
+            if ($email) $q->where('email', $email);
+            if ($nik) $q->orWhere('nik', $nik);
+        })->first();
+
+        if ($existing) {
+            return response()->json(['error' => 'Email/Username atau NIK sudah terdaftar pada pengguna lain'], 400);
+        }
+
         $jabatanLower = strtolower((string)$jabatan);
         $role = $jabatanLower === 'admin' ? 'ADMIN' : 'KARYAWAN';
 
@@ -470,7 +479,7 @@ class AdminController extends Controller
         })->where('id', '!=', $id)->first();
 
         if ($existing) {
-            return response()->json(['error' => 'Email atau NIK sudah terdaftar pada pengguna lain'], 400);
+            return response()->json(['error' => 'Email/Username atau NIK sudah terdaftar pada pengguna lain'], 400);
         }
 
         $jabatanLower = strtolower($jabatan ?? '');

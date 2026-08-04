@@ -21,7 +21,7 @@ class CreateEmployeeRequest extends FormRequest
     {
         return [
             'nama' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255',
+            'email' => 'required|string|max:255',
             'password' => 'nullable|string|min:6',
             'nik' => 'nullable|string|max:20',
             'jabatan' => 'nullable|string|max:100',
@@ -41,8 +41,7 @@ class CreateEmployeeRequest extends FormRequest
     {
         return [
             'nama.required' => 'Nama karyawan wajib diisi.',
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Format email tidak valid.',
+            'email.required' => 'Email atau Username wajib diisi.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 6 karakter.',
             'masterLokasiId.exists' => 'Lokasi yang dipilih tidak ditemukan.',
