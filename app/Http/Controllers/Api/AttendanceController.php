@@ -95,9 +95,9 @@ class AttendanceController extends Controller
             ], 403);
         }
 
-        // 2. Lapis 1: Geofencing Validation
+        // 2. Lapis 1: Geofencing Validation (Bypassed for SALLER)
         $distance = GeoService::getDistanceInMeters((float)$latitude, (float)$longitude, $masterLokasi->latitude, $masterLokasi->longitude);
-        if ($distance > $masterLokasi->radius) {
+        if ($user->role !== 'SALLER' && $distance > $masterLokasi->radius) {
             return response()->json([
                 'error' => "Posisi Anda berada di luar radius lokasi ({$masterLokasi->nama_place}).",
                 'distance' => round($distance),
@@ -126,6 +126,19 @@ class AttendanceController extends Controller
             }
             return response()->json(['error' => 'Terjadi kesalahan pada server: ' . $e->getMessage()], 500);
         }
+
+        // Upload foto ke Cloudinary jika berbentuk Base64
+        $fotoMasukUrl = null;
+        if ($fotoWajah) {
+            try {
+                $cloudinary = new \App\Services\CloudinaryService();
+                $fotoMasukUrl = $cloudinary->uploadBase64($fotoWajah, 'attendance');
+            } catch (\Exception $e) {
+                // Fallback jika Cloudinary belum dikonfigurasi
+            }
+        }
+
+        $alamatMasuk = $request->input('alamat') ?? $request->input('alamatMasuk') ?? GeoService::getAddressFromCoords((float)$latitude, (float)$longitude);
 
         // 4. Catat Absensi Masuk
         $startOfDay = $wibTime->copy()->startOfDay()->toDateString();
@@ -159,7 +172,8 @@ class AttendanceController extends Controller
             'waktu_masuk' => Carbon::now($masterLokasi->timezone),
             'lat_masuk' => (float)$latitude,
             'lng_masuk' => (float)$longitude,
-            'foto_masuk' => null,
+            'alamat_masuk' => $alamatMasuk,
+            'foto_masuk' => $fotoMasukUrl,
             'status' => $status,
         ]);
 
@@ -230,7 +244,7 @@ class AttendanceController extends Controller
         $wibTime = Carbon::now($masterLokasi->timezone);
 
         $distance = GeoService::getDistanceInMeters((float)$latitude, (float)$longitude, $masterLokasi->latitude, $masterLokasi->longitude);
-        if ($distance > $masterLokasi->radius) {
+        if ($user->role !== 'SALLER' && $distance > $masterLokasi->radius) {
             return response()->json([
                 'error' => "Posisi Anda berada di luar radius lokasi ({$masterLokasi->nama_place}).",
                 'distance' => round($distance),
@@ -260,6 +274,19 @@ class AttendanceController extends Controller
             return response()->json(['error' => 'Terjadi kesalahan pada server: ' . $e->getMessage()], 500);
         }
 
+        // Upload foto ke Cloudinary jika berbentuk Base64
+        $fotoKeluarUrl = null;
+        if ($fotoWajah) {
+            try {
+                $cloudinary = new \App\Services\CloudinaryService();
+                $fotoKeluarUrl = $cloudinary->uploadBase64($fotoWajah, 'attendance');
+            } catch (\Exception $e) {
+                // Fallback jika Cloudinary belum dikonfigurasi
+            }
+        }
+
+        $alamatKeluar = $request->input('alamat') ?? $request->input('alamatKeluar') ?? GeoService::getAddressFromCoords((float)$latitude, (float)$longitude);
+
         // 3. Cek absen masuk (hari ini atau kemarin jika overnight shift)
         $startOfDay = $wibTime->copy()->startOfDay()->toDateString();
 
@@ -286,7 +313,10 @@ class AttendanceController extends Controller
 
         $absenKeluar = tap($existingAbsen)->update([
             'waktu_keluar' => Carbon::now($masterLokasi->timezone),
-            'foto_keluar' => null,
+            'lat_keluar' => (float)$latitude,
+            'lng_keluar' => (float)$longitude,
+            'alamat_keluar' => $alamatKeluar,
+            'foto_keluar' => $fotoKeluarUrl,
         ]);
 
         return response()->json(['message' => 'Absen Keluar Berhasil', 'data' => $existingAbsen->fresh()]);

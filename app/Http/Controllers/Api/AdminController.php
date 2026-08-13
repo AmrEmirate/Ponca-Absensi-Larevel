@@ -81,12 +81,22 @@ class AdminController extends Controller
                 'tanggal' => $absen->tanggal ? $absen->tanggal->format('Y-m-d') : null,
                 'waktuMasuk' => $absen->waktu_masuk ? $absen->waktu_masuk->format('Y-m-d\TH:i:sP') : null,
                 'waktuKeluar' => $absen->waktu_keluar ? $absen->waktu_keluar->format('Y-m-d\TH:i:sP') : null,
+                'latMasuk' => $absen->lat_masuk,
+                'lngMasuk' => $absen->lng_masuk,
+                'latKeluar' => $absen->lat_keluar,
+                'lngKeluar' => $absen->lng_keluar,
+                'alamatMasuk' => $absen->alamat_masuk,
+                'alamatKeluar' => $absen->alamat_keluar,
+                'fotoMasuk' => $absen->foto_masuk,
+                'fotoKeluar' => $absen->foto_keluar,
                 'status' => $absen->status,
                 'keteranganIzin' => $keteranganIzin,
                 'user' => [
+                    'id' => $absen->user ? $absen->user->id : null,
                     'nik' => $absen->user ? ($absen->user->nik ?? '-') : '-',
                     'nama' => $absen->user ? ($absen->user->nama ?? 'Karyawan (Dihapus)') : 'Karyawan (Dihapus)',
                     'jabatan' => $absen->user ? $absen->user->jabatan : '-',
+                    'role' => $absen->user ? $absen->user->role : '-',
                     'fotoProfil' => $absen->user ? $absen->user->foto_profil : null,
                 ],
             ]);
@@ -94,7 +104,7 @@ class AdminController extends Controller
 
         // If single-day report query, include active employees who haven't checked in
         if ($start === $end) {
-            $empQuery = User::where('role', 'KARYAWAN')->where('is_active', true);
+            $empQuery = User::whereIn('role', ['KARYAWAN', 'SALLER'])->where('is_active', true);
             if ($locationId) {
                 $empQuery->where('master_lokasi_id', (int) $locationId);
             }
@@ -120,12 +130,22 @@ class AdminController extends Controller
                         'tanggal' => Carbon::parse($start)->toISOString(),
                         'waktuMasuk' => null,
                         'waktuKeluar' => null,
+                        'latMasuk' => null,
+                        'lngMasuk' => null,
+                        'latKeluar' => null,
+                        'lngKeluar' => null,
+                        'alamatMasuk' => null,
+                        'alamatKeluar' => null,
+                        'fotoMasuk' => null,
+                        'fotoKeluar' => null,
                         'status' => $status,
                         'keteranganIzin' => $keteranganIzin,
                         'user' => [
+                            'id' => $emp->id,
                             'nik' => $emp->nik,
                             'nama' => $emp->nama,
                             'jabatan' => $emp->jabatan,
+                            'role' => $emp->role,
                             'fotoProfil' => $emp->foto_profil,
                         ],
                     ]);
@@ -392,7 +412,7 @@ class AdminController extends Controller
     {
         $locationId = $request->query('locationId') ?? $request->query('master_lokasi_id');
 
-        $query = User::whereIn('role', ['ADMIN', 'KARYAWAN', 'SCANNER'])
+        $query = User::whereIn('role', ['ADMIN', 'KARYAWAN', 'SCANNER', 'SALLER'])
             ->with('lokasi');
 
         if ($locationId) {
@@ -426,13 +446,20 @@ class AdminController extends Controller
         $jabatan = $request->input('jabatan');
         $password = $request->input('password');
 
-        $jabatanLower = strtolower((string)$jabatan);
-        if (str_contains($jabatanLower, 'admin')) {
-            $role = 'ADMIN';
-        } elseif (str_contains($jabatanLower, 'scanner')) {
-            $role = 'SCANNER';
+        $roleInput = strtoupper((string)($request->input('role') ?? ''));
+        if (in_array($roleInput, ['ADMIN', 'KARYAWAN', 'SCANNER', 'SALLER', 'SALES', 'SELLER'])) {
+            $role = ($roleInput === 'SALES' || $roleInput === 'SELLER') ? 'SALLER' : $roleInput;
         } else {
-            $role = 'KARYAWAN';
+            $jabatanLower = strtolower((string)$jabatan);
+            if (str_contains($jabatanLower, 'admin')) {
+                $role = 'ADMIN';
+            } elseif (str_contains($jabatanLower, 'scanner')) {
+                $role = 'SCANNER';
+            } elseif (str_contains($jabatanLower, 'saller') || str_contains($jabatanLower, 'seller') || str_contains($jabatanLower, 'sales')) {
+                $role = 'SALLER';
+            } else {
+                $role = 'KARYAWAN';
+            }
         }
 
         $masterLokasiId = $request->input('master_lokasi_id') ?? $request->input('masterLokasiId');
@@ -509,13 +536,20 @@ class AdminController extends Controller
             return response()->json(['error' => 'Email/Username atau NIK sudah terdaftar pada pengguna lain'], 400);
         }
 
-        $jabatanLower = strtolower($jabatan ?? '');
-        if (str_contains($jabatanLower, 'admin')) {
-            $role = 'ADMIN';
-        } elseif (str_contains($jabatanLower, 'scanner')) {
-            $role = 'SCANNER';
+        $roleInput = strtoupper((string)($request->input('role') ?? ''));
+        if (in_array($roleInput, ['ADMIN', 'KARYAWAN', 'SCANNER', 'SALLER', 'SALES', 'SELLER'])) {
+            $role = ($roleInput === 'SALES' || $roleInput === 'SELLER') ? 'SALLER' : $roleInput;
         } else {
-            $role = 'KARYAWAN';
+            $jabatanLower = strtolower($jabatan ?? '');
+            if (str_contains($jabatanLower, 'admin')) {
+                $role = 'ADMIN';
+            } elseif (str_contains($jabatanLower, 'scanner')) {
+                $role = 'SCANNER';
+            } elseif (str_contains($jabatanLower, 'saller') || str_contains($jabatanLower, 'seller') || str_contains($jabatanLower, 'sales')) {
+                $role = 'SALLER';
+            } else {
+                $role = 'KARYAWAN';
+            }
         }
 
         $data = [

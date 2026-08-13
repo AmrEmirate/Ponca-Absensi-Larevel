@@ -53,6 +53,10 @@ class Absensi extends Model
         'status',
         'lat_masuk',
         'lng_masuk',
+        'lat_keluar',
+        'lng_keluar',
+        'alamat_masuk',
+        'alamat_keluar',
         'master_lokasi_id',
     ];
 
@@ -62,6 +66,8 @@ class Absensi extends Model
         'waktu_keluar' => 'datetime',
         'lat_masuk' => 'double',
         'lng_masuk' => 'double',
+        'lat_keluar' => 'double',
+        'lng_keluar' => 'double',
         'master_lokasi_id' => 'integer',
     ];
 

@@ -29,4 +29,33 @@ class GeoService
 
         return $R * $c;
     }
+
+    /**
+     * Mendapatkan deskripsi alamat dari koordinat GPS.
+     */
+    public static function getAddressFromCoords(float $lat, float $lng): string
+    {
+        try {
+            $client = new \GuzzleHttp\Client(['timeout' => 3.0]);
+            $response = $client->get("https://nominatim.openstreetmap.org/reverse", [
+                'query' => [
+                    'format' => 'jsonv2',
+                    'lat' => $lat,
+                    'lon' => $lng,
+                ],
+                'headers' => [
+                    'User-Agent' => 'PoncaFoodApp/1.0',
+                ]
+            ]);
+            if ($response->getStatusCode() === 200) {
+                $data = json_decode($response->getBody(), true);
+                if (!empty($data['display_name'])) {
+                    return $data['display_name'];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback silently if network or timeout occurs
+        }
+        return sprintf("Koordinat GPS (%.6f, %.6f)", $lat, $lng);
+    }
 }

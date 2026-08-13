@@ -23,6 +23,8 @@ class AttendanceCheckInRequest extends FormRequest
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'fotoWajah' => 'nullable|string',
+            'alamat' => 'nullable|string',
+            'alamatMasuk' => 'nullable|string',
             'targetUserId' => 'nullable|integer|min:1',
         ];
     }

@@ -25,6 +25,7 @@ class CreateEmployeeRequest extends FormRequest
             'password' => 'nullable|string|min:6',
             'nik' => 'nullable|string|max:20',
             'jabatan' => 'nullable|string|max:100',
+            'role' => 'nullable|string',
             'gajiPerhari' => 'nullable|numeric|min:0',
             'hariKerja' => 'nullable|string',
             'jamMasukKerja' => 'nullable|string',

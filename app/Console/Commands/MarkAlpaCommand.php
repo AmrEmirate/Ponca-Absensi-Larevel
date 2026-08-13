@@ -25,8 +25,8 @@ class MarkAlpaCommand extends Command
         $dayOfWeek = $this->daysInIndonesian[$targetDate->dayOfWeek];
         $startOfDay = $targetDate->toDateString();
 
-        // Ambil semua karyawan dan admin aktif
-        $employees = User::whereIn('role', ['KARYAWAN', 'ADMIN'])
+        // Ambil semua karyawan, admin, dan saller aktif
+        $employees = User::whereIn('role', ['KARYAWAN', 'ADMIN', 'SALLER'])
             ->where('is_active', true)
             ->get();
 
