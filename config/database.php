@@ -64,6 +64,20 @@ return [
             ]) : [],
         ],
 
+        'saller' => [
+            'driver' => 'mysql',
+            'host' => env('SALLER_DB_HOST', env('DB_HOST', '153.92.15.70')),
+            'port' => env('SALLER_DB_PORT', '3306'),
+            'database' => env('SALLER_DB_DATABASE', 'u550421200_PoncaSaller'),
+            'username' => env('SALLER_DB_USERNAME', 'u550421200_PoncaSaller'),
+            'password' => env('SALLER_DB_PASSWORD', 'Itawnezila03)'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

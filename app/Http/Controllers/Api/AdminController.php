@@ -502,6 +502,8 @@ class AdminController extends Controller
             'is_active' => true,
         ]);
 
+        $this->syncToSallerDatabase($email, $nama ?? 'User', $role, $password, true);
+
         return response()->json([
             'message' => 'Karyawan berhasil dibuat',
             'data' => $this->formatEmployee($user->fresh()),
@@ -604,6 +606,8 @@ class AdminController extends Controller
 
         $user->update($data);
 
+        $this->syncToSallerDatabase($user->email, $user->nama, $user->role, $password ?? null, (bool)$user->is_active);
+
         return response()->json([
             'message' => 'Karyawan berhasil diperbarui',
             'data' => $this->formatEmployee($user->fresh()),
@@ -637,6 +641,7 @@ class AdminController extends Controller
         }
 
         $user->update(['is_active' => false]);
+        $this->syncToSallerDatabase($user->email, $user->nama, $user->role, null, false);
         return response()->json(['message' => 'Karyawan berhasil dinonaktifkan. Data dan NIK tetap tersimpan']);
     }
 
@@ -1060,5 +1065,56 @@ class AdminController extends Controller
                 'radius' => $emp->lokasi->radius,
             ] : null,
         ];
+    }
+
+    /**
+     * Sinkronisasi data user ke database Ponca Saller secara langsung (jika role SALLER / ADMIN)
+     */
+    private function syncToSallerDatabase(?string $email, string $nama, string $role, ?string $password = null, bool $isActive = true): void
+    {
+        if (empty($email)) {
+            return;
+        }
+
+        $normRole = strtoupper(trim($role));
+        if (!in_array($normRole, ['SALLER', 'ADMIN', 'SALES', 'SELLER'])) {
+            return;
+        }
+
+        try {
+            $sallerRole = $normRole === 'ADMIN' ? 'Admin' : 'Sales';
+            $existing = \Illuminate\Support\Facades\DB::connection('saller')->table('users')->where('email', $email)->first();
+
+            $updateData = [
+                'name' => $nama,
+                'role' => $sallerRole,
+                'status' => $isActive ? 'Active' : 'Inactive',
+                'updated_at' => now(),
+            ];
+
+            if (!empty($password)) {
+                $updateData['password'] = Hash::make($password);
+            }
+
+            if ($existing) {
+                \Illuminate\Support\Facades\DB::connection('saller')->table('users')->where('email', $email)->update($updateData);
+            } else {
+                \Illuminate\Support\Facades\DB::connection('saller')->table('users')->insert(array_merge([
+                    'name' => $nama,
+                    'email' => $email,
+                    'password' => Hash::make($password ?? 'PoncaSaller123'),
+                    'role' => $sallerRole,
+                    'location' => 'Jakarta Selatan',
+                    'status' => $isActive ? 'Active' : 'Inactive',
+                    'avatar' => strtoupper(substr($nama, 0, 2)),
+                    'must_change_password' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ], $updateData));
+            }
+            \Illuminate\Support\Facades\Log::info('Employee synced to Ponca Saller DB successfully', ['email' => $email, 'role' => $sallerRole]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed syncing employee to Ponca Saller DB', ['error' => $e->getMessage()]);
+        }
     }
 }

@@ -2,103 +2,73 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-/**
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Absensi> $absensi
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Absensi> $absensiScanned
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Izin> $izin
- * @property int $id
- * @property string $nik
- * @property string $nama
- * @property string|null $jabatan
- * @property string $email
- * @property string $password
- * @property string|null $foto_referensi
- * @property string|null $foto_profil
- * @property string $role
- * @property bool $is_active
- * @property int $gaji_perhari
- * @property string $hari_kerja
- * @property string $jam_masuk_kerja
- * @property string $jam_keluar_kerja
- * @property string $face_reverification_status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read int|null $absensi_count
- * @property-read int|null $absensi_scanned_count
- * @property-read int|null $izin_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereFaceReverificationStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereFotoProfil($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereFotoReferensi($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereGajiPerhari($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereHariKerja($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsActive($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereJabatan($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereJamKeluarKerja($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereJamMasukKerja($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereNama($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereNik($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRole($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class User extends Authenticatable
 {
-    use SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'nik',
+        'name',
         'nama',
-        'jabatan',
+        'nik',
         'email',
         'password',
-        'foto_referensi',
-        'foto_profil',
         'role',
-        'is_active',
+        'jabatan',
         'gaji_perhari',
         'hari_kerja',
         'jam_masuk_kerja',
         'jam_keluar_kerja',
         'master_lokasi_id',
+        'foto_profil',
+        'foto_referensi',
+        'location',
+        'avatar',
+        'status',
+        'is_active',
         'face_reverification_status',
+        'last_login_at',
+        'must_change_password',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-        'gaji_perhari' => 'integer',
-        'master_lokasi_id' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
+            'must_change_password' => 'boolean',
+            'gaji_perhari' => 'integer',
+            'master_lokasi_id' => 'integer',
+        ];
+    }
 
-    public function lokasi(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function lokasi()
     {
         return $this->belongsTo(MasterLokasi::class, 'master_lokasi_id');
     }
 
-    public function absensi(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function absensi()
     {
         return $this->hasMany(Absensi::class, 'user_id');
     }
 
-    public function absensiScanned(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function absensiScanned()
     {
         return $this->hasMany(Absensi::class, 'scanner_id');
     }
 
-    public function izin(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function izin()
     {
         return $this->hasMany(Izin::class, 'user_id');
     }
