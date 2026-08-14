@@ -18,7 +18,10 @@ class UserApiController extends Controller
     {
         $this->requireAdmin('view users');
 
-        $users = User::all()->map(fn ($u) => $this->formatUser($u));
+        // Ponca Saller hanya menampilkan user dengan akses POS (role ADMIN & SALLER)
+        $users = User::whereIn('role', ['ADMIN', 'SALLER'])
+            ->get()
+            ->map(fn ($u) => $this->formatUser($u));
 
         return response()->json(['users' => $users]);
     }
@@ -30,24 +33,12 @@ class UserApiController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'max:255', 'unique:users,email'],
-            'role' => ['required', 'string', 'in:Admin,Sales,Karyawan,Scanner,ADMIN,SALLER,KARYAWAN,SCANNER'],
+            'role' => ['required', 'string', 'in:Admin,Sales,Saller,ADMIN,SALLER,SALES'],
             'location' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $roleInput = strtoupper(trim($validated['role']));
-        if (str_contains($roleInput, 'ADMIN')) {
-            $dbRole = 'ADMIN';
-            $jabatanDefault = 'Admin POS';
-        } elseif (str_contains($roleInput, 'SALLER') || str_contains($roleInput, 'SALES') || str_contains($roleInput, 'SELLER')) {
-            $dbRole = 'SALLER';
-            $jabatanDefault = 'Saller';
-        } elseif (str_contains($roleInput, 'SCANNER')) {
-            $dbRole = 'SCANNER';
-            $jabatanDefault = 'Scanner';
-        } else {
-            $dbRole = 'KARYAWAN';
-            $jabatanDefault = 'Karyawan';
-        }
+        $dbRole = str_contains(strtoupper(trim($validated['role'])), 'ADMIN') ? 'ADMIN' : 'SALLER';
+        $jabatanDefault = $dbRole === 'ADMIN' ? 'Admin POS' : 'Saller';
 
         $defaultPassword = $dbRole === 'ADMIN'
             ? self::DEFAULT_PASSWORD_ADMIN
@@ -56,7 +47,7 @@ class UserApiController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'nama' => $validated['name'],
-            'nik' => 'STAFF-' . time() . '-' . rand(100, 999),
+            'nik' => 'SALES-' . time() . '-' . rand(100, 999),
             'email' => $validated['email'],
             'password' => Hash::make($defaultPassword),
             'role' => $dbRole,
@@ -68,7 +59,7 @@ class UserApiController extends Controller
             'must_change_password' => true,
         ]);
 
-        Log::info('New user created by admin', [
+        Log::info('New user created by admin in POS', [
             'new_user' => $user->email,
             'created_by' => Auth::user()->email,
             'ip' => $request->ip(),
@@ -90,20 +81,11 @@ class UserApiController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:Admin,Sales,Karyawan,Scanner,ADMIN,SALLER,KARYAWAN,SCANNER'],
+            'role' => ['required', 'string', 'in:Admin,Sales,Saller,ADMIN,SALLER,SALES'],
             'location' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $roleInput = strtoupper(trim($validated['role']));
-        if (str_contains($roleInput, 'ADMIN')) {
-            $dbRole = 'ADMIN';
-        } elseif (str_contains($roleInput, 'SALLER') || str_contains($roleInput, 'SALES') || str_contains($roleInput, 'SELLER')) {
-            $dbRole = 'SALLER';
-        } elseif (str_contains($roleInput, 'SCANNER')) {
-            $dbRole = 'SCANNER';
-        } else {
-            $dbRole = 'KARYAWAN';
-        }
+        $dbRole = str_contains(strtoupper(trim($validated['role'])), 'ADMIN') ? 'ADMIN' : 'SALLER';
 
         $user->update([
             'name' => $validated['name'],
@@ -113,7 +95,7 @@ class UserApiController extends Controller
             'location' => $validated['location'] ?? $user->location,
         ]);
 
-        Log::info('User updated by admin', ['target' => $user->email, 'role' => $dbRole, 'by' => Auth::user()->email]);
+        Log::info('User updated by admin in POS', ['target' => $user->email, 'role' => $dbRole, 'by' => Auth::user()->email]);
 
         return response()->json([
             'message' => "Data {$user->nama} berhasil diperbarui!",
