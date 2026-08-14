@@ -123,6 +123,8 @@ Route::middleware(JwtAuth::class)->group(function () {
     Route::delete('/orders/{id}', [OrderApiController::class, 'destroy'])->name('api.orders.destroy');
     Route::post('/orders/{id}/retry-sync', [OrderApiController::class, 'retrySync'])->name('api.orders.retry-sync');
     Route::post('/orders/{id}/toggle-verification', [OrderApiController::class, 'toggleVerification'])->name('api.orders.toggle-verification');
+    Route::post('/orders/{id}/approve', [OrderApiController::class, 'approve'])->name('api.orders.approve');
+    Route::post('/orders/{id}/reject', [OrderApiController::class, 'reject'])->name('api.orders.reject');
 
     Route::get('/users', [UserApiController::class, 'index'])->name('api.users.index');
     Route::post('/users', [UserApiController::class, 'store'])->name('api.users.store');

@@ -57,7 +57,7 @@ class OrderApiController extends Controller
             'order_date' => now(),
             'total_amount' => 0,
             'payment_method' => $validated['paymentMethod'],
-            'receipt_url' => null,
+            'receipt_url' => $validated['receiptUrl'] ?? null,
             'sync_status' => 'Pending',
             'accurate_invoice_no' => null,
             'is_verified' => false,
@@ -86,12 +86,13 @@ class OrderApiController extends Controller
             'order_no' => $orderNo,
             'created_by' => $user?->email,
             'total' => $totalAmount,
+            'receipt_url' => $validated['receiptUrl'] ?? null,
         ]);
 
         $order->load(['customer', 'items.product']);
 
         return response()->json([
-            'message' => "Order {$orderNo} berhasil dibuat! (Status: Pending Sync Accurate)",
+            'message' => "Order {$orderNo} berhasil dikirim ke Admin! (Menunggu Persetujuan)",
             'order' => $this->formatOrder($order),
         ], 201);
     }
@@ -170,6 +171,54 @@ class OrderApiController extends Controller
         ]);
     }
 
+    public function approve(Request $request, string $id)
+    {
+        $this->requireAdmin('approve order');
+
+        $order = SalesOrder::where('order_no', $id)->firstOrFail();
+        $user = Auth::user();
+        $adminName = $user?->name ?? $user?->nama ?? 'Admin';
+
+        $order->update([
+            'is_verified' => true,
+            'verified_at' => now(),
+            'verified_by_name' => $adminName,
+            'sync_error_message' => null,
+        ]);
+
+        Log::info("Order {$order->order_no} disetujui (approved) oleh Admin {$adminName}", ['by' => $user?->email]);
+
+        return response()->json([
+            'message' => "Pesanan {$order->order_no} berhasil disetujui!",
+            'order' => $this->formatOrder($order->fresh(['customer', 'items.product'])),
+        ]);
+    }
+
+    public function reject(Request $request, string $id)
+    {
+        $this->requireAdmin('reject order');
+
+        $order = SalesOrder::where('order_no', $id)->firstOrFail();
+        $user = Auth::user();
+        $adminName = $user?->name ?? $user?->nama ?? 'Admin';
+        $reason = $request->input('reason', 'Pesanan ditolak oleh Admin');
+
+        $order->update([
+            'is_verified' => false,
+            'verified_at' => now(),
+            'verified_by_name' => $adminName,
+            'sync_status' => 'Failed',
+            'sync_error_message' => $reason,
+        ]);
+
+        Log::info("Order {$order->order_no} ditolak (rejected) oleh Admin {$adminName}: {$reason}", ['by' => $user?->email]);
+
+        return response()->json([
+            'message' => "Pesanan {$order->order_no} telah ditolak!",
+            'order' => $this->formatOrder($order->fresh(['customer', 'items.product'])),
+        ]);
+    }
+
     public function toggleVerification(Request $request, string $id)
     {
         $this->requireAdmin('toggle verification');
@@ -185,7 +234,7 @@ class OrderApiController extends Controller
             'verified_by_name' => $newVerifiedStatus ? ($user?->name ?? $user?->nama ?? 'Admin') : null,
         ]);
 
-        $statusText = $newVerifiedStatus ? 'BERHASIL DIVERIFIKASI' : 'DIBATALKAN VERIFIKASINYA';
+        $statusText = $newVerifiedStatus ? 'BERHASIL DISETUJUI' : 'DIBATALKAN PERSETUJUANNYA';
         Log::info("Order {$order->order_no} status verifikasi diubah ke: {$statusText}", ['by' => $user?->email]);
 
         return response()->json([
