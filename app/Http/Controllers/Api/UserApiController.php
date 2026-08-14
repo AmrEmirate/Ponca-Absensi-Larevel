@@ -29,12 +29,14 @@ class UserApiController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'role' => ['required', 'string', 'in:Admin,Sales'],
+            'email' => ['required', 'string', 'max:255', 'unique:users,email'],
+            'role' => ['required', 'string', 'in:Admin,Sales,ADMIN,SALLER'],
             'location' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $defaultPassword = $validated['role'] === 'Admin'
+        $dbRole = str_contains(strtoupper($validated['role']), 'ADMIN') ? 'ADMIN' : 'SALLER';
+
+        $defaultPassword = $dbRole === 'ADMIN'
             ? self::DEFAULT_PASSWORD_ADMIN
             : self::DEFAULT_PASSWORD_SALES;
 
@@ -44,7 +46,8 @@ class UserApiController extends Controller
             'nik' => 'SALES-' . time() . '-' . rand(100, 999),
             'email' => $validated['email'],
             'password' => Hash::make($defaultPassword),
-            'role' => $validated['role'],
+            'role' => $dbRole,
+            'jabatan' => $dbRole === 'ADMIN' ? 'Admin POS' : 'Saller',
             'location' => $validated['location'] ?? 'Jakarta Selatan',
             'status' => 'Active',
             'is_active' => true,
@@ -59,7 +62,7 @@ class UserApiController extends Controller
         ]);
 
         return response()->json([
-            'message' => "Akun {$user->name} berhasil dibuat! Sandi default: {$defaultPassword}",
+            'message' => "Akun {$user->nama} berhasil dibuat! Sandi default: {$defaultPassword}",
             'user' => $this->formatUser($user),
             'defaultPassword' => $defaultPassword,
         ], 201);
@@ -73,23 +76,26 @@ class UserApiController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:Admin,Sales'],
+            'email' => ['required', 'string', 'max:255', 'unique:users,email,'.$user->id],
+            'role' => ['required', 'string', 'in:Admin,Sales,ADMIN,SALLER'],
             'location' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $dbRole = str_contains(strtoupper($validated['role']), 'ADMIN') ? 'ADMIN' : 'SALLER';
 
         $user->update([
             'name' => $validated['name'],
             'nama' => $validated['name'],
             'email' => $validated['email'],
-            'role' => $validated['role'],
+            'role' => $dbRole,
+            'jabatan' => $dbRole === 'ADMIN' ? 'Admin POS' : 'Saller',
             'location' => $validated['location'] ?? $user->location,
         ]);
 
         Log::info('User updated by admin', ['target' => $user->email, 'by' => Auth::user()->email]);
 
         return response()->json([
-            'message' => "Data {$user->name} berhasil diperbarui!",
+            'message' => "Data {$user->nama} berhasil diperbarui!",
             'user' => $this->formatUser($user->fresh()),
         ]);
     }
@@ -142,13 +148,14 @@ class UserApiController extends Controller
 
     private function formatUser(User $u): array
     {
+        $displayName = $u->nama ?: ($u->name ?: 'User');
         return [
             'id' => (string) $u->id,
-            'name' => $u->name ?? $u->nama,
+            'name' => $displayName,
             'email' => $u->email,
             'role' => $u->role,
             'location' => $u->location ?? 'Jakarta Selatan',
-            'avatar' => $u->avatar ?? $u->foto_profil ?? strtoupper(substr($u->name ?? $u->nama, 0, 2)),
+            'avatar' => $u->foto_profil ?: ($u->avatar ?: strtoupper(substr($displayName, 0, 2))),
             'status' => $u->status ?? ($u->is_active ? 'Active' : 'Inactive'),
             'lastLogin' => $u->last_login_at ? $u->last_login_at->diffForHumans() : 'Never',
             'mustChangePassword' => (bool) $u->must_change_password,

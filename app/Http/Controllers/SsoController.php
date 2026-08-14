@@ -49,16 +49,24 @@ class SsoController extends Controller
 
         if ($user) {
             $roleStr = strtoupper(trim((string)$user->role));
+            $jabatanLower = strtolower(trim((string)($user->jabatan ?? '')));
+            $isSallerOrAdmin = in_array($roleStr, ['ADMIN', 'SALLER', 'SALES', 'SELLER'])
+                || str_contains($jabatanLower, 'admin')
+                || str_contains($jabatanLower, 'saller')
+                || str_contains($jabatanLower, 'seller')
+                || str_contains($jabatanLower, 'sales')
+                || str_contains($jabatanLower, 'kasir');
 
-            if (!in_array($roleStr, ['ADMIN', 'SALLER', 'SALES', 'SELLER'])) {
-                Log::warning('SSO login rejected for unauthorized role', ['email' => $user->email, 'role' => $roleStr]);
-                return redirect($frontendUrl . '/login')->withErrors(['email' => 'Akses ditolak: Akun Anda (Role ' . ($roleStr ?: 'Karyawan') . ') tidak memiliki hak akses ke aplikasi Ponca Saller.']);
-            }
-
-            if (in_array($roleStr, ['SALLER', 'SELLER', 'SALES']) && $user->role !== 'Sales') {
-                $user->update(['role' => 'Sales']);
-            } elseif ($roleStr === 'ADMIN' && $user->role !== 'Admin') {
-                $user->update(['role' => 'Admin']);
+            if (!$isSallerOrAdmin) {
+                Log::warning('SSO login rejected for non-saller role', [
+                    'email' => $user->email,
+                    'role' => $roleStr,
+                    'jabatan' => $user->jabatan,
+                ]);
+                $jabatanLabel = $user->jabatan ?: ($roleStr === 'KARYAWAN' ? 'Karyawan Tetap' : 'Karyawan');
+                return redirect($frontendUrl . '/login')->withErrors([
+                    'email' => "Akses ditolak: Akun Anda ({$jabatanLabel}) tidak memiliki izin akses ke POS Ponca Saller. Hanya Admin dan Karyawan Saller (Sales/Kasir) yang dapat login."
+                ]);
             }
 
             Auth::login($user);

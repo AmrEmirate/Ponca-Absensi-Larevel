@@ -13,31 +13,70 @@ class AuthApiController extends Controller
 {
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', 'min:6', 'max:255'],
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'min:4', 'max:255'],
         ]);
 
-        $user = User::where('email', $credentials['email'])->first();
+        $loginInput = trim($validated['email']);
+        $password = $validated['password'];
 
-        if ($user && ($user->status !== 'Active' || $user->is_active === false)) {
-            Log::warning('Blocked login on inactive account', ['email' => $credentials['email'], 'ip' => $request->ip()]);
-            return response()->json(['error' => 'Akun Anda tidak aktif. Hubungi Administrator.'], 403);
+        // Cari user berdasarkan email, NIK, atau nama
+        $user = User::where('email', $loginInput)
+            ->orWhere('nik', $loginInput)
+            ->orWhere('nama', $loginInput)
+            ->first();
+
+        if (!$user) {
+            Log::warning('Login failed: user not found', ['input' => $loginInput, 'ip' => $request->ip()]);
+            return response()->json(['error' => 'Email/NIK/Username atau kata sandi tidak sesuai.'], 401);
         }
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            Log::warning('Failed login attempt', ['email' => $credentials['email'], 'ip' => $request->ip()]);
-            return response()->json(['error' => 'Email atau kata sandi tidak sesuai.'], 401);
+        if (!$user->is_active || ($user->status && $user->status !== 'Active')) {
+            Log::warning('Blocked login on inactive account', ['input' => $loginInput, 'ip' => $request->ip()]);
+            return response()->json(['error' => 'Akun Anda tidak aktif. Silakan hubungi Administrator.'], 403);
         }
 
-        $request->session()->regenerate();
-        $user = Auth::user();
+        if (!Hash::check($password, $user->password)) {
+            Log::warning('Failed login attempt: invalid password', ['input' => $loginInput, 'ip' => $request->ip()]);
+            return response()->json(['error' => 'Email/NIK/Username atau kata sandi tidak sesuai.'], 401);
+        }
+
+        // Cek Hak Akses POS Ponca Saller (Hanya Admin dan Karyawan Saller/Sales/Kasir)
+        $roleStr = strtoupper(trim((string)$user->role));
+        $jabatanLower = strtolower(trim((string)($user->jabatan ?? '')));
+        $isSallerOrAdmin = in_array($roleStr, ['ADMIN', 'SALLER', 'SALES', 'SELLER'])
+            || str_contains($jabatanLower, 'admin')
+            || str_contains($jabatanLower, 'saller')
+            || str_contains($jabatanLower, 'seller')
+            || str_contains($jabatanLower, 'sales')
+            || str_contains($jabatanLower, 'kasir');
+
+        if (!$isSallerOrAdmin) {
+            Log::warning('Login rejected for non-saller employee', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+                'jabatan' => $user->jabatan,
+                'ip' => $request->ip(),
+            ]);
+            $jabatanLabel = $user->jabatan ?: ($roleStr === 'KARYAWAN' ? 'Karyawan Tetap' : 'Karyawan');
+            return response()->json([
+                'error' => "Akses ditolak: Akun Anda ({$jabatanLabel}) tidak memiliki izin akses ke POS Ponca Saller. Hanya Admin dan Karyawan Saller (Sales/Kasir) yang dapat login."
+            ], 403);
+        }
+
+        Auth::login($user, $request->boolean('remember'));
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
         $user->update(['last_login_at' => now()]);
 
-        Log::info('Login berhasil', [
+        Log::info('Login POS berhasil', [
             'user_id' => $user->id,
             'email' => $user->email,
             'role' => $user->role,
+            'jabatan' => $user->jabatan,
             'ip' => $request->ip(),
         ]);
 
@@ -104,13 +143,14 @@ class AuthApiController extends Controller
 
     private function formatUser(User $user): array
     {
+        $displayName = $user->nama ?: ($user->name ?: 'User');
         return [
             'id' => (string) $user->id,
-            'name' => $user->name ?? $user->nama,
+            'name' => $displayName,
             'email' => $user->email,
             'role' => $user->role,
             'location' => $user->location ?? 'Jakarta Selatan',
-            'avatar' => $user->avatar ?? strtoupper(substr($user->name ?? $user->nama, 0, 2)),
+            'avatar' => $user->foto_profil ?: ($user->avatar ?: strtoupper(substr($displayName, 0, 2))),
             'status' => $user->status ?? ($user->is_active ? 'Active' : 'Inactive'),
             'mustChangePassword' => (bool) $user->must_change_password,
             'lastLogin' => $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Never',
