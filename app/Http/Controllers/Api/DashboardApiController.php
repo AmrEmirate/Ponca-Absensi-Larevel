@@ -24,19 +24,26 @@ class DashboardApiController extends Controller
 
         $orders = $ordersQuery->get()->map(fn ($o) => $this->formatOrder($o));
 
-        $salesAgents = User::where('role', 'like', '%Sales%')->orWhere('role', 'like', '%SALLER%')->get();
+        $salesAgents = User::whereIn('role', ['ADMIN', 'SALLER', 'Sales', 'Admin', 'sales', 'admin', 'OWNER'])->get();
         $leaderboard = $salesAgents->map(function ($agent) {
             $agentName = $agent->name ?? $agent->nama;
-            $totalRevenue = SalesOrder::where(function ($q) use ($agent, $agentName) {
+            $agentOrders = SalesOrder::where(function ($q) use ($agent, $agentName) {
                 $q->where('user_id', $agent->id)
                     ->orWhere('sales_agent_name', $agentName);
-            })->sum('total_amount');
+            });
+            $totalRevenue = $agentOrders->sum('total_amount');
+            $totalOrders = $agentOrders->count();
+            $verifiedOrders = (clone $agentOrders)->where('is_verified', true)->count();
 
             return [
+                'id' => (string) $agent->id,
                 'name' => $agentName,
-                'outlet' => $agent->location ?? 'Jakarta Selatan',
+                'role' => $agent->role,
+                'outlet' => $agent->location ?? $agent->lokasi?->nama_lokasi ?? 'Jakarta Selatan',
                 'totalRevenue' => (float) $totalRevenue,
-                'avatar' => $agent->avatar ?? $agent->foto_profil ?? strtoupper(substr($agentName, 0, 2)),
+                'totalOrders' => (int) $totalOrders,
+                'verifiedOrders' => (int) $verifiedOrders,
+                'avatar' => $agent->foto_profil ?? $agent->avatar ?? strtoupper(substr($agentName, 0, 2)),
             ];
         })
             ->sortByDesc('totalRevenue')
@@ -78,6 +85,9 @@ class DashboardApiController extends Controller
             'paymentMethod' => $o->payment_method,
             'receiptUrl' => $o->receipt_url,
             'syncStatus' => $o->sync_status,
+            'isVerified' => (bool) $o->is_verified,
+            'verifiedAt' => $o->verified_at ? $o->verified_at->format('d M Y H:i') : null,
+            'verifiedByName' => $o->verified_by_name,
             'accurateInvoiceNo' => $o->accurate_invoice_no,
             'syncErrorMessage' => $o->sync_error_message,
             'items' => $o->items->map(fn ($item) => [
@@ -88,8 +98,9 @@ class DashboardApiController extends Controller
                     'unitPrice' => (float) $item->unit_price,
                     'category' => $item->product?->category ?? 'Food',
                     'stock' => $item->product?->stock ?? 0,
+                    'weight' => $item->product?->weight ? (float) $item->product->weight : null,
+                    'unit' => $item->product?->unit ?? 'gr',
                     'image' => $item->product?->image_url ?? '',
-                    'unit' => 'Portion',
                 ],
                 'quantity' => $item->quantity,
                 'subtotal' => (float) $item->subtotal,
