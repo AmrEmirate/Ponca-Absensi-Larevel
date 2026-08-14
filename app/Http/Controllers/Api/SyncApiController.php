@@ -14,13 +14,36 @@ class SyncApiController extends Controller
     {
         $this->requireAdmin('view sync datasets');
 
-        $datasets = AccurateSyncDataset::all()->map(fn ($d) => [
-            'code' => $d->code,
-            'datasetName' => $d->dataset_name,
-            'recordCount' => $d->record_count,
-            'status' => $d->status,
-            'lastSync' => $d->last_sync,
-        ]);
+        $config = AccurateConfig::first();
+        $isConnected = (bool) ($config && !empty($config->api_token) && !empty($config->client_id) && !empty($config->db_id));
+
+        $productCount = \App\Models\Product::count();
+        $customerCount = \App\Models\Customer::count();
+        $orderCount = \App\Models\SalesOrder::count();
+
+        $datasets = [
+            [
+                'code' => 'products',
+                'datasetName' => 'Master Produk / Item Menu',
+                'recordCount' => $productCount,
+                'status' => $isConnected ? ($config->last_successful_sync ? 'Synced' : 'Ready') : 'Not Connected',
+                'lastSync' => $config?->last_successful_sync ?? 'Belum pernah',
+            ],
+            [
+                'code' => 'customers',
+                'datasetName' => 'Master Pelanggan & Mitra',
+                'recordCount' => $customerCount,
+                'status' => $isConnected ? ($config->last_successful_sync ? 'Synced' : 'Ready') : 'Not Connected',
+                'lastSync' => $config?->last_successful_sync ?? 'Belum pernah',
+            ],
+            [
+                'code' => 'orders',
+                'datasetName' => 'Sales Orders / Faktur Penjualan',
+                'recordCount' => $orderCount,
+                'status' => $isConnected ? ($config->last_successful_sync ? 'Synced' : 'Ready') : 'Not Connected',
+                'lastSync' => $config?->last_successful_sync ?? 'Belum pernah',
+            ],
+        ];
 
         return response()->json(['datasets' => $datasets]);
     }
@@ -30,15 +53,19 @@ class SyncApiController extends Controller
         $this->requireAdmin('view sync config');
 
         $config = AccurateConfig::first();
+        $isConnected = (bool) ($config && !empty($config->api_token) && !empty($config->client_id) && !empty($config->db_id));
 
         return response()->json([
             'config' => [
-                'clientId' => $config?->client_id ?? 'pfj-acc-app-2026',
-                'apiToken' => $config?->api_token ?? '',
-                'dbId' => $config?->db_id ?? '889201',
-                'autoSync' => (bool) ($config?->auto_sync ?? true),
+                'clientId' => $config?->client_id ?? '',
+                'apiToken' => $config?->api_token ? '••••••••••••••••' : '',
+                'hasToken' => !empty($config?->api_token),
+                'dbId' => $config?->db_id ?? '',
+                'autoSync' => (bool) ($config?->auto_sync ?? false),
                 'syncIntervalMinutes' => (int) ($config?->sync_interval_minutes ?? 5),
-                'lastSuccessfulSync' => $config?->last_successful_sync ?? 'Never',
+                'lastSuccessfulSync' => $config?->last_successful_sync ?? 'Belum pernah',
+                'isConnected' => $isConnected,
+                'status' => $isConnected ? 'Connected' : 'Disconnected',
             ],
         ]);
     }
@@ -109,15 +136,20 @@ class SyncApiController extends Controller
             'sync_interval_minutes' => $validated['syncIntervalMinutes'] ?? 5,
         ]);
 
+        $isConnected = (bool) (!empty($config->api_token) && !empty($config->client_id) && !empty($config->db_id));
+
         return response()->json([
             'message' => 'Konfigurasi Accurate Online berhasil disimpan!',
             'config' => [
                 'clientId' => $config->client_id,
-                'apiToken' => $config->api_token,
+                'apiToken' => '••••••••••••••••',
+                'hasToken' => !empty($config->api_token),
                 'dbId' => $config->db_id,
                 'autoSync' => (bool) $config->auto_sync,
                 'syncIntervalMinutes' => (int) $config->sync_interval_minutes,
-                'lastSuccessfulSync' => $config->last_successful_sync ?? 'Never',
+                'lastSuccessfulSync' => $config->last_successful_sync ?? 'Belum pernah',
+                'isConnected' => $isConnected,
+                'status' => $isConnected ? 'Connected' : 'Disconnected',
             ],
         ]);
     }
