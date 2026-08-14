@@ -110,6 +110,9 @@ Route::middleware(JwtAuth::class)->group(function () {
 
     Route::get('/products', [ProductApiController::class, 'index'])->name('api.products.index');
     Route::post('/products', [ProductApiController::class, 'store'])->name('api.products.store');
+    Route::post('/products/{itemCode}/update', [ProductApiController::class, 'update'])->name('api.products.update');
+    Route::put('/products/{itemCode}', [ProductApiController::class, 'update'])->name('api.products.put');
+    Route::delete('/products/{itemCode}', [ProductApiController::class, 'destroy'])->name('api.products.destroy');
     Route::post('/products/{itemCode}/update-image', [ProductApiController::class, 'updateImage'])->name('api.products.update-image');
 
     Route::get('/customers', [CustomerApiController::class, 'index'])->name('api.customers.index');
