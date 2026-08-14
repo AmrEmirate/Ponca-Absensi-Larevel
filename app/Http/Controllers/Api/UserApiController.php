@@ -30,11 +30,24 @@ class UserApiController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'max:255', 'unique:users,email'],
-            'role' => ['required', 'string', 'in:Admin,Sales,ADMIN,SALLER'],
+            'role' => ['required', 'string', 'in:Admin,Sales,Karyawan,Scanner,ADMIN,SALLER,KARYAWAN,SCANNER'],
             'location' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $dbRole = str_contains(strtoupper($validated['role']), 'ADMIN') ? 'ADMIN' : 'SALLER';
+        $roleInput = strtoupper(trim($validated['role']));
+        if (str_contains($roleInput, 'ADMIN')) {
+            $dbRole = 'ADMIN';
+            $jabatanDefault = 'Admin POS';
+        } elseif (str_contains($roleInput, 'SALLER') || str_contains($roleInput, 'SALES') || str_contains($roleInput, 'SELLER')) {
+            $dbRole = 'SALLER';
+            $jabatanDefault = 'Saller';
+        } elseif (str_contains($roleInput, 'SCANNER')) {
+            $dbRole = 'SCANNER';
+            $jabatanDefault = 'Scanner';
+        } else {
+            $dbRole = 'KARYAWAN';
+            $jabatanDefault = 'Karyawan';
+        }
 
         $defaultPassword = $dbRole === 'ADMIN'
             ? self::DEFAULT_PASSWORD_ADMIN
@@ -43,11 +56,11 @@ class UserApiController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'nama' => $validated['name'],
-            'nik' => 'SALES-' . time() . '-' . rand(100, 999),
+            'nik' => 'STAFF-' . time() . '-' . rand(100, 999),
             'email' => $validated['email'],
             'password' => Hash::make($defaultPassword),
             'role' => $dbRole,
-            'jabatan' => $dbRole === 'ADMIN' ? 'Admin POS' : 'Saller',
+            'jabatan' => $jabatanDefault,
             'location' => $validated['location'] ?? 'Jakarta Selatan',
             'status' => 'Active',
             'is_active' => true,
@@ -62,7 +75,7 @@ class UserApiController extends Controller
         ]);
 
         return response()->json([
-            'message' => "Akun {$user->nama} berhasil dibuat! Sandi default: {$defaultPassword}",
+            'message' => "Akun {$user->nama} ({$dbRole}) berhasil dibuat! Sandi default: {$defaultPassword}",
             'user' => $this->formatUser($user),
             'defaultPassword' => $defaultPassword,
         ], 201);
@@ -77,22 +90,30 @@ class UserApiController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:Admin,Sales,ADMIN,SALLER'],
+            'role' => ['required', 'string', 'in:Admin,Sales,Karyawan,Scanner,ADMIN,SALLER,KARYAWAN,SCANNER'],
             'location' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $dbRole = str_contains(strtoupper($validated['role']), 'ADMIN') ? 'ADMIN' : 'SALLER';
+        $roleInput = strtoupper(trim($validated['role']));
+        if (str_contains($roleInput, 'ADMIN')) {
+            $dbRole = 'ADMIN';
+        } elseif (str_contains($roleInput, 'SALLER') || str_contains($roleInput, 'SALES') || str_contains($roleInput, 'SELLER')) {
+            $dbRole = 'SALLER';
+        } elseif (str_contains($roleInput, 'SCANNER')) {
+            $dbRole = 'SCANNER';
+        } else {
+            $dbRole = 'KARYAWAN';
+        }
 
         $user->update([
             'name' => $validated['name'],
             'nama' => $validated['name'],
             'email' => $validated['email'],
             'role' => $dbRole,
-            'jabatan' => $dbRole === 'ADMIN' ? 'Admin POS' : 'Saller',
             'location' => $validated['location'] ?? $user->location,
         ]);
 
-        Log::info('User updated by admin', ['target' => $user->email, 'by' => Auth::user()->email]);
+        Log::info('User updated by admin', ['target' => $user->email, 'role' => $dbRole, 'by' => Auth::user()->email]);
 
         return response()->json([
             'message' => "Data {$user->nama} berhasil diperbarui!",
