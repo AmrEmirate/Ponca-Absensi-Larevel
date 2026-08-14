@@ -102,7 +102,7 @@ Route::prefix('notifications')->middleware(JwtAuth::class)->group(function () {
 // === Web POS SPA Routes (Public & Sanctum) ===
 Route::post('/pos/login', [AuthApiController::class, 'login'])->name('api.pos.login');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:web')->group(function () {
     Route::post('/pos/logout', [AuthApiController::class, 'logout'])->name('api.pos.logout');
     Route::get('/me', [AuthApiController::class, 'me'])->name('api.me');
     Route::post('/change-password', [AuthApiController::class, 'changePassword'])->name('api.change-password');
