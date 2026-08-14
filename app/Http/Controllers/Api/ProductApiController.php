@@ -26,6 +26,8 @@ class ProductApiController extends Controller
             'category' => ['required', 'string', 'max:100'],
             'unitPrice' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
+            'weight' => ['nullable', 'numeric', 'min:0'],
+            'unit' => ['nullable', 'string', 'max:50'],
             'itemCode' => ['nullable', 'string', 'max:50', 'unique:products,item_code'],
             'imageUrl' => ['nullable', 'string', 'max:1024'],
         ]);
@@ -40,6 +42,8 @@ class ProductApiController extends Controller
             'category' => $validated['category'],
             'unit_price' => $validated['unitPrice'],
             'stock' => $validated['stock'],
+            'weight' => $validated['weight'] ?? null,
+            'unit' => $validated['unit'] ?? 'gr',
             'image_url' => $validated['imageUrl'] ?? null,
             'accurate_item_id' => null,
         ]);
@@ -64,6 +68,8 @@ class ProductApiController extends Controller
             'category' => ['required', 'string', 'max:100'],
             'unitPrice' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
+            'weight' => ['nullable', 'numeric', 'min:0'],
+            'unit' => ['nullable', 'string', 'max:50'],
             'imageUrl' => ['nullable', 'string', 'max:1024'],
         ]);
 
@@ -72,6 +78,8 @@ class ProductApiController extends Controller
             'category' => $validated['category'],
             'unit_price' => $validated['unitPrice'],
             'stock' => $validated['stock'],
+            'weight' => array_key_exists('weight', $validated) ? $validated['weight'] : $product->weight,
+            'unit' => $validated['unit'] ?? $product->unit ?? 'gr',
             'image_url' => $validated['imageUrl'] ?? $product->image_url,
         ]);
 
@@ -133,8 +141,9 @@ class ProductApiController extends Controller
             'category' => $p->category,
             'unitPrice' => (float) $p->unit_price,
             'stock' => (int) $p->stock,
+            'weight' => $p->weight ? (float) $p->weight : null,
+            'unit' => $p->unit ?? 'gr',
             'image' => $p->image_url ?? '',
-            'unit' => $p->unit ?? 'Porsi',
         ];
     }
 

@@ -15,6 +15,8 @@ class Product extends Model
         'category',
         'unit_price',
         'stock',
+        'weight',
+        'unit',
         'image_url',
         'accurate_item_id',
     ];
@@ -22,5 +24,6 @@ class Product extends Model
     protected $casts = [
         'unit_price' => 'double',
         'stock' => 'integer',
+        'weight' => 'double',
     ];
 }
