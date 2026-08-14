@@ -41,7 +41,18 @@ class AuthApiController extends Controller
             'ip' => $request->ip(),
         ]);
 
+        $secret = config('services.jwt.secret') ?? env('JWT_SECRET', 'ce1ca04cea4e29159d5e1696054e18546892aec1669eb7f791f9b172f72aa3ab500bb61ac6ea26845c553b5acfc1c2417dd2191a3c9a7957d91f07931eee7359');
+        $payload = [
+            'id' => $user->id,
+            'nik' => $user->nik,
+            'role' => $user->role,
+            'iat' => time(),
+            'exp' => time() + (7 * 24 * 60 * 60), // 7 days
+        ];
+        $token = \Firebase\JWT\JWT::encode($payload, $secret, 'HS256');
+
         return response()->json([
+            'token' => $token,
             'user' => $this->formatUser($user),
         ]);
     }
