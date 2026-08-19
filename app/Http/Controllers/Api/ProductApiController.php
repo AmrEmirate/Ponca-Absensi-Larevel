@@ -153,10 +153,20 @@ class ProductApiController extends Controller
         if (! $user) {
             abort(401, 'Silakan login terlebih dahulu.');
         }
-        $role = strtolower($user->role ?? '');
-        $jabatan = strtolower($user->jabatan ?? '');
-        if (! str_contains($role, 'admin') && ! str_contains($role, 'saller') && ! str_contains($jabatan, 'admin') && ! str_contains($jabatan, 'sales')) {
-            abort(403, 'Akses ditolak: Hanya Admin / Saller yang dapat mengelola produk.');
+        $role = strtolower(trim((string) ($user->role ?? '')));
+        $jabatan = strtolower(trim((string) ($user->jabatan ?? '')));
+
+        $allowed = ['admin', 'owner', 'saller', 'seller', 'sales', 'kasir', 'staff', 'karyawan'];
+        $hasPermission = false;
+        foreach ($allowed as $r) {
+            if (str_contains($role, $r) || str_contains($jabatan, $r)) {
+                $hasPermission = true;
+                break;
+            }
+        }
+
+        if (! $hasPermission) {
+            abort(403, 'Akses ditolak: Hanya Admin / Saller / Karyawan POS yang dapat mengelola produk.');
         }
     }
 }
