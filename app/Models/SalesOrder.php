@@ -17,6 +17,10 @@ class SalesOrder extends Model
         'user_id',
         'sales_agent_name',
         'order_date',
+        'subtotal',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
         'total_amount',
         'payment_method',
         'receipt_url',
@@ -31,6 +35,9 @@ class SalesOrder extends Model
     protected $casts = [
         'order_date' => 'datetime',
         'verified_at' => 'datetime',
+        'subtotal' => 'double',
+        'discount_value' => 'double',
+        'discount_amount' => 'double',
         'total_amount' => 'double',
         'is_verified' => 'boolean',
     ];

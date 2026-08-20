@@ -43,6 +43,8 @@ class OrderApiController extends Controller
             'customerType' => ['nullable', 'string', 'max:50'],
             'paymentMethod' => ['required', 'string'],
             'receiptUrl' => ['nullable', 'string'],
+            'discountType' => ['nullable', 'string', 'in:percent,nominal'],
+            'discountValue' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'string'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -74,7 +76,7 @@ class OrderApiController extends Controller
         }
 
         $orderNo = 'SO-'.date('Ymd').'-'.rand(1000, 9999);
-        $totalAmount = 0;
+        $rawSubtotal = 0;
 
         $order = SalesOrder::create([
             'order_no' => $orderNo,
@@ -82,6 +84,10 @@ class OrderApiController extends Controller
             'user_id' => $user?->id,
             'sales_agent_name' => $user?->name ?? $user?->nama ?? 'Sales Agent',
             'order_date' => now(),
+            'subtotal' => 0,
+            'discount_type' => null,
+            'discount_value' => 0,
+            'discount_amount' => 0,
             'total_amount' => 0,
             'payment_method' => $validated['paymentMethod'],
             'receipt_url' => $validated['receiptUrl'] ?? null,
@@ -94,7 +100,7 @@ class OrderApiController extends Controller
             $product = Product::where('item_code', $itemData['productId'])->first();
             $unitPrice = $product ? (float) $product->unit_price : 0;
             $subtotal = $unitPrice * $itemData['quantity'];
-            $totalAmount += $subtotal;
+            $rawSubtotal += $subtotal;
 
             SalesOrderItem::create([
                 'sales_order_id' => $order->id,
@@ -107,7 +113,26 @@ class OrderApiController extends Controller
             ]);
         }
 
-        $order->update(['total_amount' => $totalAmount]);
+        $discountType = $validated['discountType'] ?? null;
+        $discountValue = isset($validated['discountValue']) ? (float) $validated['discountValue'] : 0;
+        $discountAmount = 0;
+
+        if ($discountType === 'percent' && $discountValue > 0) {
+            $discountAmount = ($rawSubtotal * $discountValue) / 100;
+        } elseif ($discountType === 'nominal' && $discountValue > 0) {
+            $discountAmount = $discountValue;
+        }
+
+        $discountAmount = min($rawSubtotal, max(0, $discountAmount));
+        $finalTotal = max(0, $rawSubtotal - $discountAmount);
+
+        $order->update([
+            'subtotal' => $rawSubtotal,
+            'discount_type' => $discountAmount > 0 ? $discountType : null,
+            'discount_value' => $discountAmount > 0 ? $discountValue : 0,
+            'discount_amount' => $discountAmount,
+            'total_amount' => $finalTotal,
+        ]);
 
         Log::info('New order created', [
             'order_no' => $orderNo,
@@ -284,6 +309,10 @@ class OrderApiController extends Controller
             'salesAgent' => $o->sales_agent_name,
             'transDate' => $o->order_date?->format('d M Y') ?? '',
             'timestamp' => $o->order_date?->format('h:i A') ?? '',
+            'subtotal' => (float) ($o->subtotal > 0 ? $o->subtotal : $o->total_amount),
+            'discountType' => $o->discount_type,
+            'discountValue' => (float) ($o->discount_value ?? 0),
+            'discountAmount' => (float) ($o->discount_amount ?? 0),
             'totalAmount' => (float) $o->total_amount,
             'paymentMethod' => $o->payment_method,
             'receiptUrl' => $o->receipt_url,
