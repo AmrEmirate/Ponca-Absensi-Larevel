@@ -11,6 +11,7 @@ use App\Models\SalesOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class OrderApiController extends Controller
 {
@@ -36,7 +37,10 @@ class OrderApiController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customerId' => ['required', 'string'],
+            'customerId' => ['nullable', 'string'],
+            'customerName' => ['nullable', 'string', 'max:255'],
+            'customerPhone' => ['nullable', 'string', 'max:50'],
+            'customerType' => ['nullable', 'string', 'max:50'],
             'paymentMethod' => ['required', 'string'],
             'receiptUrl' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
@@ -45,7 +49,30 @@ class OrderApiController extends Controller
         ]);
 
         $user = $request->user();
-        $customer = Customer::where('customer_no', $validated['customerId'])->first();
+        $customer = null;
+        if (! empty($validated['customerId']) && $validated['customerId'] !== 'CUST-WALKIN') {
+            $customer = Customer::where('customer_no', $validated['customerId'])->first();
+        }
+
+        $custName = $validated['customerName'] ?? $customer?->name ?? 'Walk-in Customer';
+        $custPhone = $validated['customerPhone'] ?? $customer?->phone ?? null;
+        $custType = $validated['customerType'] ?? $customer?->category ?? 'Walk-in';
+
+        if (! $customer && $custName) {
+            $customer = Customer::firstOrCreate(
+                ['name' => $custName],
+                [
+                    'customer_no' => 'CUST-'.strtoupper(Str::random(6)),
+                    'phone' => $custPhone,
+                    'category' => $custType,
+                    'address' => 'Outlet Ponca Food',
+                ]
+            );
+            if ($custPhone && $customer->phone !== $custPhone) {
+                $customer->update(['phone' => $custPhone]);
+            }
+        }
+
         $orderNo = 'SO-'.date('Ymd').'-'.rand(1000, 9999);
         $totalAmount = 0;
 
