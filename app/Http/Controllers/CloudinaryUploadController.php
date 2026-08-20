@@ -11,7 +11,7 @@ class CloudinaryUploadController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'file' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'min:5', 'max:5120'],
             'folder' => ['nullable', 'string', 'max:100'],
         ]);
 
