@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Log;
 
 class UserApiController extends Controller
 {
-    const DEFAULT_PASSWORD_SALES = 'PoncaSaller';
+    const DEFAULT_PASSWORD_SALES = 'PoncaSales';
     const DEFAULT_PASSWORD_ADMIN = 'PoncaAdmin';
 
     public function index()
     {
         $this->requireAdmin('view users');
 
-        // Ponca Saller hanya menampilkan user dengan akses POS (role ADMIN & SALLER)
+        // Ponca Sales hanya menampilkan user dengan akses POS (role ADMIN & SALLER)
         $users = User::whereIn('role', ['ADMIN', 'SALLER'])
             ->get()
             ->map(fn ($u) => $this->formatUser($u));
@@ -38,7 +38,7 @@ class UserApiController extends Controller
         ]);
 
         $dbRole = str_contains(strtoupper(trim($validated['role'])), 'ADMIN') ? 'ADMIN' : 'SALLER';
-        $jabatanDefault = $dbRole === 'ADMIN' ? 'Admin POS' : 'Saller';
+        $jabatanDefault = $dbRole === 'ADMIN' ? 'Admin POS' : 'Sales';
 
         $defaultPassword = $dbRole === 'ADMIN'
             ? self::DEFAULT_PASSWORD_ADMIN

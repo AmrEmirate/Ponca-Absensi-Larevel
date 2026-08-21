@@ -62,7 +62,7 @@ class AuthApiController extends Controller
             ]);
             $jabatanLabel = $user->jabatan ?: ($roleStr === 'KARYAWAN' ? 'Karyawan Tetap' : 'Karyawan');
             return response()->json([
-                'error' => "Akses ditolak: Akun Anda ({$jabatanLabel}) tidak memiliki izin akses ke POS Ponca Saller. Hanya Admin dan Karyawan Saller (Sales/Kasir) yang dapat login."
+                'error' => "Akses ditolak: Akun Anda ({$jabatanLabel}) tidak memiliki izin akses ke POS Ponca Sales. Hanya Admin dan Karyawan Sales (Kasir) yang dapat login."
             ], 403);
         }
 

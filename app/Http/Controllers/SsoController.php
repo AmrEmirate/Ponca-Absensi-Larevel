@@ -65,7 +65,7 @@ class SsoController extends Controller
                 ]);
                 $jabatanLabel = $user->jabatan ?: ($roleStr === 'KARYAWAN' ? 'Karyawan Tetap' : 'Karyawan');
                 return redirect($frontendUrl . '/login')->withErrors([
-                    'email' => "Akses ditolak: Akun Anda ({$jabatanLabel}) tidak memiliki izin akses ke POS Ponca Saller. Hanya Admin dan Karyawan Saller (Sales/Kasir) yang dapat login."
+                    'email' => "Akses ditolak: Akun Anda ({$jabatanLabel}) tidak memiliki izin akses ke POS Ponca Sales. Hanya Admin dan Karyawan Sales (Kasir) yang dapat login."
                 ]);
             }
 

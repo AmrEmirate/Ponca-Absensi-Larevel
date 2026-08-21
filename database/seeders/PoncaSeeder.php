@@ -74,19 +74,24 @@ class PoncaSeeder extends Seeder
             ]);
         }
 
-        // 4. Seed User DUMMY SALLER (Untuk Web POS Ponca Saller)
-        $sellerEmail = 'seller@poncafood.com';
-        $sellerPassword = 'PoncaSaller';
-        $sellerNik = 'SALES001';
+        // 4. Seed User DUMMY SALES (Untuk Web POS Ponca Sales)
+        $salesEmail = 'sales@poncafood.com';
+        $salesPassword = 'PoncaSales';
+        $salesNik = 'SALES001';
 
-        $seller = User::where('email', $sellerEmail)->orWhere('nik', $sellerNik)->first();
-        if ($seller) {
-            $seller->update([
-                'name' => 'Seller Dummy Ponca',
-                'nama' => 'Seller Dummy Ponca',
-                'nik' => $sellerNik,
-                'email' => $sellerEmail,
-                'jabatan' => 'Saller',
+        $sales = User::where('email', $salesEmail)
+            ->orWhere('email', 'seller@poncafood.com')
+            ->orWhere('nik', $salesNik)
+            ->first();
+
+        if ($sales) {
+            $sales->update([
+                'name' => 'Sales Dummy Ponca',
+                'nama' => 'Sales Dummy Ponca',
+                'nik' => $salesNik,
+                'email' => $salesEmail,
+                'password' => Hash::make($salesPassword),
+                'jabatan' => 'Sales',
                 'role' => 'SALLER',
                 'location' => 'Jakarta Selatan',
                 'status' => 'Active',
@@ -100,12 +105,12 @@ class PoncaSeeder extends Seeder
             ]);
         } else {
             User::create([
-                'name' => 'Seller Dummy Ponca',
-                'nama' => 'Seller Dummy Ponca',
-                'nik' => $sellerNik,
-                'email' => $sellerEmail,
-                'password' => Hash::make($sellerPassword),
-                'jabatan' => 'Saller',
+                'name' => 'Sales Dummy Ponca',
+                'nama' => 'Sales Dummy Ponca',
+                'nik' => $salesNik,
+                'email' => $salesEmail,
+                'password' => Hash::make($salesPassword),
+                'jabatan' => 'Sales',
                 'role' => 'SALLER',
                 'location' => 'Jakarta Selatan',
                 'status' => 'Active',

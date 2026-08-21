@@ -166,7 +166,7 @@ class ProductApiController extends Controller
         }
 
         if (! $hasPermission) {
-            abort(403, 'Akses ditolak: Hanya Admin / Saller / Karyawan POS yang dapat mengelola produk.');
+            abort(403, 'Akses ditolak: Hanya Admin / Sales / Karyawan POS yang dapat mengelola produk.');
         }
     }
 }
