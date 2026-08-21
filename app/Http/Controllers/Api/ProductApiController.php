@@ -12,9 +12,27 @@ class ProductApiController extends Controller
 {
     public function index()
     {
-        $products = Product::orderBy('created_at', 'desc')->get()->map(fn ($p) => $this->formatProduct($p));
+        $products = Product::orderBy('sort_order', 'asc')->orderBy('id', 'asc')->get()->map(fn ($p) => $this->formatProduct($p));
 
         return response()->json(['products' => $products]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $this->requireStaff('reorder products');
+
+        $validated = $request->validate([
+            'orderedItemCodes' => ['required', 'array', 'min:1'],
+            'orderedItemCodes.*' => ['required', 'string'],
+        ]);
+
+        foreach ($validated['orderedItemCodes'] as $index => $itemCode) {
+            Product::where('item_code', $itemCode)->update(['sort_order' => $index + 1]);
+        }
+
+        return response()->json([
+            'message' => 'Urutan susunan produk berhasil disimpan!',
+        ]);
     }
 
     public function store(Request $request)
@@ -140,6 +158,7 @@ class ProductApiController extends Controller
             'name' => $p->name,
             'category' => $p->category,
             'unitPrice' => (float) $p->unit_price,
+            'sortOrder' => (int) ($p->sort_order ?? 0),
             'stock' => (int) $p->stock,
             'weight' => $p->weight ? (float) $p->weight : null,
             'unit' => $p->unit ?? 'gr',

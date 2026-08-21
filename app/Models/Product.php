@@ -14,6 +14,7 @@ class Product extends Model
         'name',
         'category',
         'unit_price',
+        'sort_order',
         'stock',
         'weight',
         'unit',
@@ -23,6 +24,7 @@ class Product extends Model
 
     protected $casts = [
         'unit_price' => 'double',
+        'sort_order' => 'integer',
         'stock' => 'integer',
         'weight' => 'double',
     ];
