@@ -137,7 +137,7 @@ class OrderApiController extends Controller
         Log::info('New order created', [
             'order_no' => $orderNo,
             'created_by' => $user?->email,
-            'total' => $totalAmount,
+            'total' => $finalTotal,
             'receipt_url' => $validated['receiptUrl'] ?? null,
         ]);
 
