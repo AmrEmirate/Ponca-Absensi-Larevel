@@ -72,5 +72,51 @@ class PoncaSeeder extends Seeder
                 'face_reverification_status' => 'NONE',
             ]);
         }
+
+        // 4. Seed User DUMMY SALLER (Untuk Web POS Ponca Saller)
+        $sellerEmail = 'seller@poncafood.com';
+        $sellerPassword = 'PoncaSaller';
+        $sellerNik = 'SALES001';
+
+        $seller = User::where('email', $sellerEmail)->orWhere('nik', $sellerNik)->first();
+        if ($seller) {
+            $seller->update([
+                'name' => 'Seller Dummy Ponca',
+                'nama' => 'Seller Dummy Ponca',
+                'nik' => $sellerNik,
+                'email' => $sellerEmail,
+                'jabatan' => 'Saller',
+                'role' => 'SALLER',
+                'location' => 'Jakarta Selatan',
+                'status' => 'Active',
+                'is_active' => true,
+                'must_change_password' => false,
+                'gaji_perhari' => 75000,
+                'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
+                'jam_masuk_kerja' => '08:00',
+                'jam_keluar_kerja' => '17:00',
+                'master_lokasi_id' => $pabrikHq->id,
+            ]);
+        } else {
+            User::create([
+                'name' => 'Seller Dummy Ponca',
+                'nama' => 'Seller Dummy Ponca',
+                'nik' => $sellerNik,
+                'email' => $sellerEmail,
+                'password' => Hash::make($sellerPassword),
+                'jabatan' => 'Saller',
+                'role' => 'SALLER',
+                'location' => 'Jakarta Selatan',
+                'status' => 'Active',
+                'is_active' => true,
+                'must_change_password' => false,
+                'gaji_perhari' => 75000,
+                'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
+                'jam_masuk_kerja' => '08:00',
+                'jam_keluar_kerja' => '17:00',
+                'master_lokasi_id' => $pabrikHq->id,
+                'face_reverification_status' => 'NONE',
+            ]);
+        }
     }
 }
