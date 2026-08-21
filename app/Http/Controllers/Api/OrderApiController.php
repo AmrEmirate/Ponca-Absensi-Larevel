@@ -41,7 +41,7 @@ class OrderApiController extends Controller
             'customerName' => ['nullable', 'string', 'max:255'],
             'customerPhone' => ['nullable', 'string', 'max:50'],
             'customerType' => ['nullable', 'string', 'max:50'],
-            'paymentMethod' => ['required', 'string'],
+            'paymentMethod' => ['nullable', 'string'],
             'receiptUrl' => ['nullable', 'string'],
             'discountType' => ['nullable', 'string', 'in:percent,nominal'],
             'discountValue' => ['nullable', 'numeric', 'min:0'],
@@ -89,7 +89,7 @@ class OrderApiController extends Controller
             'discount_value' => 0,
             'discount_amount' => 0,
             'total_amount' => 0,
-            'payment_method' => $validated['paymentMethod'],
+            'payment_method' => $validated['paymentMethod'] ?? 'Direct',
             'receipt_url' => $validated['receiptUrl'] ?? null,
             'sync_status' => 'Pending',
             'accurate_invoice_no' => null,
@@ -156,7 +156,7 @@ class OrderApiController extends Controller
         $order = SalesOrder::where('order_no', $id)->firstOrFail();
 
         $validated = $request->validate([
-            'paymentMethod' => ['required', 'string', 'in:Cash,Transfer,QRIS,Debit Card,Credit,GoFood,GrabFood,ShopeeFood'],
+            'paymentMethod' => ['nullable', 'string'],
             'totalAmount' => ['required', 'numeric', 'min:0'],
             'syncStatus' => ['required', 'string', 'in:Pending,Synced,Failed'],
             'customerName' => ['nullable', 'string', 'max:255'],
@@ -167,7 +167,7 @@ class OrderApiController extends Controller
         }
 
         $order->update([
-            'payment_method' => $validated['paymentMethod'],
+            'payment_method' => $validated['paymentMethod'] ?? $order->payment_method ?? 'Direct',
             'total_amount' => $validated['totalAmount'],
             'sync_status' => $validated['syncStatus'],
             'sync_error_message' => $validated['syncStatus'] === 'Failed'
