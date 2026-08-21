@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Absensi;
 use App\Models\Izin;
 use App\Models\MasterLokasi;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -117,6 +118,117 @@ class PoncaSeeder extends Seeder
                 'master_lokasi_id' => $pabrikHq->id,
                 'face_reverification_status' => 'NONE',
             ]);
+        }
+
+        // 5. Seed Produk Master Ponca Food & Raja Laris (Sesuai Harga Agen Resmi)
+        $products = [
+            [
+                'item_code' => 'PRD-MTZCZG',
+                'name' => 'Dimsum Raja Laris',
+                'category' => 'Food',
+                'unit_price' => 23500,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191433/ponca_product_images/yodyee1meupft84z2sea.png',
+            ],
+            [
+                'item_code' => 'PRD-586WCE',
+                'name' => 'Chicken Cake Roll',
+                'category' => 'Food',
+                'unit_price' => 26000,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191466/ponca_product_images/qcwp9kwbmd0aqyo89jh4.png',
+            ],
+            [
+                'item_code' => 'PRD-7874FD',
+                'name' => 'Tahu Bakso',
+                'category' => 'Food',
+                'unit_price' => 22500,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191475/ponca_product_images/sjttu0ywwqqcnufoljn9.png',
+            ],
+            [
+                'item_code' => 'PRD-OVNGGO',
+                'name' => 'Otak Otak',
+                'category' => 'Food',
+                'unit_price' => 22000,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191482/ponca_product_images/utpsoy4weq2g2pnognwp.png',
+            ],
+            [
+                'item_code' => 'PRD-YQDEHX',
+                'name' => 'Siomay Raja Laris',
+                'category' => 'Food',
+                'unit_price' => 20500,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191498/ponca_product_images/wi8bsmftvktffow6b34h.png',
+            ],
+            [
+                'item_code' => 'PRD-M3DKE1',
+                'name' => 'Dimsum Goreng Keju',
+                'category' => 'Food',
+                'unit_price' => 23500,
+                'stock' => 50,
+                'weight' => 400,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191516/ponca_product_images/c9cvr2nit4i5fu0cs1bo.png',
+            ],
+            [
+                'item_code' => 'PRD-A8XJMK',
+                'name' => 'Dimsum',
+                'category' => 'Food',
+                'unit_price' => 26000,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191524/ponca_product_images/xwyvcyb0oxlh79abwytp.png',
+            ],
+            [
+                'item_code' => 'PRD-JMUFGB',
+                'name' => 'Kekian Ikan',
+                'category' => 'Food',
+                'unit_price' => 26000,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191531/ponca_product_images/flzmehy0emvvath7gswg.png',
+            ],
+            [
+                'item_code' => 'PRD-27ETXZ',
+                'name' => 'Siomay Ikan',
+                'category' => 'Food',
+                'unit_price' => 23500,
+                'stock' => 50,
+                'weight' => 500,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787191538/ponca_product_images/habvc3gszojsjw9umrnx.png',
+            ],
+            [
+                'item_code' => 'PRD-EGGROL',
+                'name' => 'Egg Roll',
+                'category' => 'Food',
+                'unit_price' => 17500,
+                'stock' => 50,
+                'weight' => 300,
+                'unit' => 'gr',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787277045/ponca_product_images/eqzmq06yxuwll5g0htcd.png',
+            ],
+        ];
+
+        foreach ($products as $p) {
+            Product::updateOrCreate(
+                ['item_code' => $p['item_code']],
+                $p
+            );
         }
     }
 }
