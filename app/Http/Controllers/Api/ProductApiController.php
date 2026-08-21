@@ -19,7 +19,7 @@ class ProductApiController extends Controller
 
     public function reorder(Request $request)
     {
-        $this->requireStaff('reorder products');
+        $this->requireAdmin('reorder products');
 
         $validated = $request->validate([
             'orderedItemCodes' => ['required', 'array', 'min:1'],
@@ -186,6 +186,21 @@ class ProductApiController extends Controller
 
         if (! $hasPermission) {
             abort(403, 'Akses ditolak: Hanya Admin / Sales / Karyawan POS yang dapat mengelola produk.');
+        }
+    }
+
+    private function requireAdmin(string $action): void
+    {
+        $user = Auth::user();
+        if (! $user) {
+            abort(401, 'Silakan login terlebih dahulu.');
+        }
+        $role = strtolower(trim((string) ($user->role ?? '')));
+        $jabatan = strtolower(trim((string) ($user->jabatan ?? '')));
+
+        $isAdmin = str_contains($role, 'admin') || str_contains($jabatan, 'admin') || str_contains($role, 'owner') || str_contains($jabatan, 'owner');
+        if (! $isAdmin) {
+            abort(403, 'Akses ditolak: Hanya Admin yang dapat menyusun dan mengubah urutan produk.');
         }
     }
 }
