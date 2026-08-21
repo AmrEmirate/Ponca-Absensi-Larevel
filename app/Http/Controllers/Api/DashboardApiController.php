@@ -31,9 +31,10 @@ class DashboardApiController extends Controller
                 $q->where('user_id', $agent->id)
                     ->orWhere('sales_agent_name', $agentName);
             });
-            $totalRevenue = $agentOrders->sum('total_amount');
-            $totalOrders = $agentOrders->count();
-            $verifiedOrders = (clone $agentOrders)->where('is_verified', true)->count();
+            // Hanya menghitung transaksi yang SUDAH diverifikasi/disetujui Admin
+            $verifiedQuery = (clone $agentOrders)->where('is_verified', true);
+            $totalRevenue = $verifiedQuery->sum('total_amount');
+            $totalOrders = $verifiedQuery->count();
 
             return [
                 'id' => (string) $agent->id,
@@ -42,7 +43,7 @@ class DashboardApiController extends Controller
                 'outlet' => $agent->location ?? $agent->lokasi?->nama_lokasi ?? 'Jakarta Selatan',
                 'totalRevenue' => (float) $totalRevenue,
                 'totalOrders' => (int) $totalOrders,
-                'verifiedOrders' => (int) $verifiedOrders,
+                'verifiedOrders' => (int) $totalOrders,
                 'avatar' => $agent->foto_profil ?? $agent->avatar ?? strtoupper(substr($agentName, 0, 2)),
             ];
         })
@@ -50,9 +51,10 @@ class DashboardApiController extends Controller
             ->values()
             ->all();
 
-        $todayOrders = SalesOrder::whereDate('order_date', today())->get();
-        $todayRevenue = $todayOrders->sum('total_amount');
-        $pendingCount = SalesOrder::where('sync_status', 'Pending')->count();
+        // Statistik Dashboard Hari Ini (HANYA transaksi yang SUDAH diverifikasi Admin)
+        $todayVerifiedOrders = SalesOrder::whereDate('order_date', today())->where('is_verified', true)->get();
+        $todayRevenue = $todayVerifiedOrders->sum('total_amount');
+        $pendingCount = SalesOrder::where('is_verified', false)->count();
         $failedCount = SalesOrder::where('sync_status', 'Failed')->count();
 
         return response()->json([
@@ -60,7 +62,7 @@ class DashboardApiController extends Controller
             'leaderboard' => $leaderboard,
             'stats' => [
                 'todayRevenue' => (float) $todayRevenue,
-                'todayOrders' => $todayOrders->count(),
+                'todayOrders' => $todayVerifiedOrders->count(),
                 'pendingSync' => $pendingCount,
                 'failedSync' => $failedCount,
             ],
