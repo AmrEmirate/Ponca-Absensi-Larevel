@@ -328,7 +328,7 @@ class OrderApiController extends Controller
                     'itemNo' => $item->item_code,
                     'name' => $item->product_name,
                     'unitPrice' => (float) $item->unit_price,
-                    'category' => $item->product?->category ?? 'Food',
+                    'category' => $item->product?->category ?? 'Umum',
                     'stock' => $item->product?->stock ?? 0,
                     'image' => $item->product?->image_url ?? '',
                     'unit' => 'Portion',

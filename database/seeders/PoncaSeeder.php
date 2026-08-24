@@ -130,7 +130,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-MTZCZG',
                 'name' => 'Dimsum Raja Laris',
-                'category' => 'Food',
+                'category' => 'Dimsum',
                 'unit_price' => 23500,
                 'stock' => 999999,
                 'weight' => 500,
@@ -140,7 +140,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-586WCE',
                 'name' => 'Chicken Cake Roll',
-                'category' => 'Food',
+                'category' => 'Olahan Ayam',
                 'unit_price' => 26000,
                 'stock' => 999999,
                 'weight' => 500,
@@ -150,7 +150,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-7874FD',
                 'name' => 'Tahu Bakso',
-                'category' => 'Food',
+                'category' => 'Tahu Bakso',
                 'unit_price' => 22500,
                 'stock' => 999999,
                 'weight' => 500,
@@ -160,7 +160,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-OVNGGO',
                 'name' => 'Otak Otak',
-                'category' => 'Food',
+                'category' => 'Olahan Ikan',
                 'unit_price' => 22000,
                 'stock' => 999999,
                 'weight' => 500,
@@ -170,7 +170,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-YQDEHX',
                 'name' => 'Siomay Raja Laris',
-                'category' => 'Food',
+                'category' => 'Siomay',
                 'unit_price' => 20500,
                 'stock' => 999999,
                 'weight' => 500,
@@ -180,7 +180,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-M3DKE1',
                 'name' => 'Dimsum Goreng Keju',
-                'category' => 'Food',
+                'category' => 'Dimsum',
                 'unit_price' => 23500,
                 'stock' => 999999,
                 'weight' => 400,
@@ -190,7 +190,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-A8XJMK',
                 'name' => 'Dimsum',
-                'category' => 'Food',
+                'category' => 'Dimsum',
                 'unit_price' => 26000,
                 'stock' => 999999,
                 'weight' => 500,
@@ -200,7 +200,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-JMUFGB',
                 'name' => 'Kekian Ikan',
-                'category' => 'Food',
+                'category' => 'Olahan Ikan',
                 'unit_price' => 26000,
                 'stock' => 999999,
                 'weight' => 500,
@@ -210,7 +210,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-27ETXZ',
                 'name' => 'Siomay Ikan',
-                'category' => 'Food',
+                'category' => 'Siomay',
                 'unit_price' => 23500,
                 'stock' => 999999,
                 'weight' => 500,
@@ -220,7 +220,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-EGGROL',
                 'name' => 'Egg Roll',
-                'category' => 'Food',
+                'category' => 'Olahan Ayam',
                 'unit_price' => 17500,
                 'stock' => 999999,
                 'weight' => 300,
@@ -230,7 +230,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-DSP1KG',
                 'name' => 'Dimsum Ponca 1kg',
-                'category' => 'Food',
+                'category' => 'Dimsum',
                 'unit_price' => 51000,
                 'stock' => 999999,
                 'weight' => 1000,
@@ -240,7 +240,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-DRL1KG',
                 'name' => 'Dimsum Raja Laris 1kg',
-                'category' => 'Food',
+                'category' => 'Dimsum',
                 'unit_price' => 45000,
                 'stock' => 999999,
                 'weight' => 1000,
@@ -250,7 +250,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-DAP250',
                 'name' => 'Dimsum Ayam Ponca 250 gr',
-                'category' => 'Food',
+                'category' => 'Dimsum',
                 'unit_price' => 16000,
                 'stock' => 999999,
                 'weight' => 250,
@@ -260,7 +260,7 @@ class PoncaSeeder extends Seeder
             [
                 'item_code' => 'PRD-SIP250',
                 'name' => 'Siomay Ikan Ponca 250 gr',
-                'category' => 'Food',
+                'category' => 'Siomay',
                 'unit_price' => 14500,
                 'stock' => 999999,
                 'weight' => 250,

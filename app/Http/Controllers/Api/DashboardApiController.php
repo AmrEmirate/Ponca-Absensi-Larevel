@@ -98,7 +98,7 @@ class DashboardApiController extends Controller
                     'itemNo' => $item->item_code,
                     'name' => $item->product_name,
                     'unitPrice' => (float) $item->unit_price,
-                    'category' => $item->product?->category ?? 'Food',
+                    'category' => $item->product?->category ?? 'Umum',
                     'stock' => $item->product?->stock ?? 0,
                     'weight' => $item->product?->weight ? (float) $item->product->weight : null,
                     'unit' => $item->product?->unit ?? 'gr',
