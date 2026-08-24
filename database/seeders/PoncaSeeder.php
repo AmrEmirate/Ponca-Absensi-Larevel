@@ -235,7 +235,7 @@ class PoncaSeeder extends Seeder
                 'stock' => 999999,
                 'weight' => 1000,
                 'unit' => 'gr',
-                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787535704/ponca_product_images/cdzwhw3ifmzopqlmizde.png',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787536870/ponca_product_images/lfrgrje145equ0n6esf8.png',
             ],
             [
                 'item_code' => 'PRD-DRL1KG',
@@ -245,7 +245,7 @@ class PoncaSeeder extends Seeder
                 'stock' => 999999,
                 'weight' => 1000,
                 'unit' => 'gr',
-                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787535711/ponca_product_images/wpda9gqtmortj2iigthz.png',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787536356/ponca_product_images/un2k3ob4zckgdc3qo4us.png',
             ],
             [
                 'item_code' => 'PRD-DAP250',
@@ -255,7 +255,7 @@ class PoncaSeeder extends Seeder
                 'stock' => 999999,
                 'weight' => 250,
                 'unit' => 'gr',
-                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787535715/ponca_product_images/zvoipt4l3ugkr0u5tvjk.png',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787536361/ponca_product_images/kflsld46wowyusts7lts.png',
             ],
             [
                 'item_code' => 'PRD-SIP250',
@@ -265,7 +265,7 @@ class PoncaSeeder extends Seeder
                 'stock' => 999999,
                 'weight' => 250,
                 'unit' => 'gr',
-                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787535718/ponca_product_images/pvkz8otg3bbnq1dax7bu.png',
+                'image_url' => 'https://res.cloudinary.com/pafffh2m/image/upload/v1787536367/ponca_product_images/mcruz2fd9akqknjht20x.png',
             ],
         ];
 
