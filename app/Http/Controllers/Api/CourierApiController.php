@@ -457,4 +457,76 @@ class CourierApiController extends Controller
             'data' => $assignment,
         ]);
     }
+
+    /**
+     * POST /api/admin/routes/from-trail
+     * Mengubah riwayat GPS nyata kurir menjadi Master Rute standar.
+     */
+    public function adminSaveRouteFromTrail(Request $request)
+    {
+        $validated = $request->validate([
+            'assignment_id' => 'required|exists:courier_assignments,id',
+            'route_code' => 'required|string|max:50|unique:routes,route_code',
+            'route_name' => 'required|string|max:100',
+            'area_name' => 'nullable|string|max:100',
+        ]);
+
+        $assignment = CourierAssignment::with([
+            'locations' => function ($q) {
+                $q->orderBy('id', 'asc');
+            },
+            'route.stops' => function ($q) {
+                $q->orderBy('sequence_order', 'asc');
+            },
+        ])->findOrFail($validated['assignment_id']);
+
+        if ($assignment->locations->isEmpty()) {
+            return response()->json(['error' => 'Penugasan ini belum memiliki riwayat titik GPS.'], 422);
+        }
+
+        // Susun polyline dari riwayat GPS asli
+        $polylinePoints = [];
+        foreach ($assignment->locations as $loc) {
+            $polylinePoints[] = [
+                'lat' => (float) $loc->latitude,
+                'lng' => (float) $loc->longitude,
+            ];
+        }
+
+        DB::beginTransaction();
+        try {
+            $newRoute = Route::create([
+                'route_code' => $validated['route_code'],
+                'route_name' => $validated['route_name'],
+                'area_name' => $validated['area_name'] ?? $assignment->route?->area_name,
+                'path_polyline' => json_encode($polylinePoints),
+                'is_active' => true,
+            ]);
+
+            // Salin daftar stops jika ada
+            if ($assignment->route && $assignment->route->stops->isNotEmpty()) {
+                foreach ($assignment->route->stops as $stop) {
+                    $newRoute->stops()->create([
+                        'store_name' => $stop->store_name,
+                        'address' => $stop->address,
+                        'latitude' => $stop->latitude,
+                        'longitude' => $stop->longitude,
+                        'sequence_order' => $stop->sequence_order,
+                        'radius_tolerance_meters' => $stop->radius_tolerance_meters,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Jalur nyata berhasil disimpan sebagai Master Rute '{$newRoute->route_name}' (" . count($polylinePoints) . " titik GPS)",
+                'data' => $newRoute->load('stops'),
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Gagal menyimpan master rute: ' . $e->getMessage()], 500);
+        }
+    }
 }
