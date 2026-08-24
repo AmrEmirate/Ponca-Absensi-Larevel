@@ -71,4 +71,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(Izin::class, 'user_id');
     }
+
+    public function courierAssignments()
+    {
+        return $this->hasMany(CourierAssignment::class, 'user_id');
+    }
+
+    public function courierLocations()
+    {
+        return $this->hasMany(CourierLocation::class, 'user_id');
+    }
+
+    public function courierDeviations()
+    {
+        return $this->hasMany(RouteDeviation::class, 'user_id');
+    }
 }

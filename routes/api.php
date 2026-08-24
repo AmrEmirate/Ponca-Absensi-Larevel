@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\IzinController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\CourierApiController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\CustomerApiController;
 use App\Http\Controllers\Api\DashboardApiController;
@@ -97,6 +98,25 @@ Route::prefix('notifications')->middleware(JwtAuth::class)->group(function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+});
+
+// === Courier Route & Tracking Routes (Mobile Kurir) ===
+Route::prefix('courier')->middleware(JwtAuth::class)->group(function () {
+    Route::get('/assignment/today', [CourierApiController::class, 'getTodayAssignment']);
+    Route::post('/assignment/{id}/start', [CourierApiController::class, 'startAssignment']);
+    Route::post('/assignment/{id}/complete', [CourierApiController::class, 'completeAssignment']);
+    Route::post('/locations/batch', [CourierApiController::class, 'batchLocations']);
+    Route::post('/deviations', [CourierApiController::class, 'logDeviations']);
+    Route::post('/stops/{stopId}/checkin', [CourierApiController::class, 'checkInStop']);
+    Route::post('/stops/{stopId}/checkout', [CourierApiController::class, 'checkOutStop']);
+});
+
+// === Admin Courier Management Routes ===
+Route::prefix('admin')->middleware([JwtAuth::class, AdminOnly::class])->group(function () {
+    Route::get('/routes', [CourierApiController::class, 'adminGetRoutes']);
+    Route::post('/routes', [CourierApiController::class, 'adminCreateRoute']);
+    Route::post('/courier/assign', [CourierApiController::class, 'adminAssignCourier']);
+    Route::get('/courier/tracking/realtime', [CourierApiController::class, 'adminRealtimeTracking']);
 });
 
 // === Web POS SPA Routes (Public & Sanctum) ===
