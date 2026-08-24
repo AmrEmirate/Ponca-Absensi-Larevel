@@ -431,4 +431,30 @@ class CourierApiController extends Controller
             'data' => $result,
         ]);
     }
+
+    /**
+     * GET /api/admin/courier/assignment/{id}/detail
+     * Mengambil detail lengkap penugasan termasuk trail koordinat & log deviasi.
+     */
+    public function adminGetAssignmentDetail($id)
+    {
+        $assignment = CourierAssignment::with([
+            'user',
+            'route.stops' => function ($q) {
+                $q->orderBy('sequence_order', 'asc');
+            },
+            'visits.stop',
+            'locations' => function ($q) {
+                $q->orderBy('id', 'asc');
+            },
+            'deviations' => function ($q) {
+                $q->orderBy('id', 'desc');
+            },
+        ])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $assignment,
+        ]);
+    }
 }

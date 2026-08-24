@@ -117,6 +117,7 @@ Route::prefix('admin')->middleware([JwtAuth::class, AdminOnly::class])->group(fu
     Route::post('/routes', [CourierApiController::class, 'adminCreateRoute']);
     Route::post('/courier/assign', [CourierApiController::class, 'adminAssignCourier']);
     Route::get('/courier/tracking/realtime', [CourierApiController::class, 'adminRealtimeTracking']);
+    Route::get('/courier/assignment/{id}', [CourierApiController::class, 'adminGetAssignmentDetail']);
 });
 
 // === Web POS SPA Routes (Public & Sanctum) ===
