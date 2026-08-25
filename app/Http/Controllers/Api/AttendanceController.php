@@ -335,8 +335,18 @@ class AttendanceController extends Controller
         $query = Absensi::with(['user:id,nama']);
 
         // Determine which user's history to fetch
-        if ($targetUserId && $jwtUser->role === 'ADMIN') {
+        if ($targetUserId && ($jwtUser->role === 'ADMIN' || $jwtUser->role === 'SCANNER')) {
             $query->where('user_id', (int) $targetUserId);
+        } elseif ($jwtUser->role === 'SCANNER') {
+            // Jika scanner tidak memilih target karyawan spesifik, tampilkan riwayat yang di-scan oleh scanner ini / di lokasinya
+            if (!empty($jwtUser->master_lokasi_id)) {
+                $query->where(function ($q) use ($jwtUser) {
+                    $q->where('scanner_id', $jwtUser->id)
+                      ->orWhere('master_lokasi_id', $jwtUser->master_lokasi_id);
+                });
+            } else {
+                $query->where('scanner_id', $jwtUser->id);
+            }
         } else {
             $query->where('user_id', $jwtUser->id);
         }
