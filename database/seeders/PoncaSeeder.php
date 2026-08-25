@@ -125,6 +125,102 @@ class PoncaSeeder extends Seeder
             ]);
         }
 
+        // 4b. Seed User DUMMY KURIR
+        $kurirEmail = 'kurir@poncafood.com';
+        $kurirPassword = 'PoncaKurir123';
+        $kurirNik = 'KURIR001';
+
+        $kurir = User::where('email', $kurirEmail)->orWhere('nik', $kurirNik)->first();
+        if ($kurir) {
+            $kurir->update([
+                'name' => 'Kurir Dummy Ponca',
+                'nama' => 'Kurir Dummy Ponca',
+                'nik' => $kurirNik,
+                'email' => $kurirEmail,
+                'password' => Hash::make($kurirPassword),
+                'jabatan' => 'Kurir Pengantaran',
+                'role' => 'KURIR',
+                'location' => 'Jakarta Selatan',
+                'status' => 'Active',
+                'is_active' => true,
+                'must_change_password' => false,
+                'gaji_perhari' => 75000,
+                'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+                'jam_masuk_kerja' => '08:00',
+                'jam_keluar_kerja' => '17:00',
+                'master_lokasi_id' => $pabrikHq->id,
+                'face_reverification_status' => 'NONE',
+            ]);
+        } else {
+            User::create([
+                'name' => 'Kurir Dummy Ponca',
+                'nama' => 'Kurir Dummy Ponca',
+                'nik' => $kurirNik,
+                'email' => $kurirEmail,
+                'password' => Hash::make($kurirPassword),
+                'jabatan' => 'Kurir Pengantaran',
+                'role' => 'KURIR',
+                'location' => 'Jakarta Selatan',
+                'status' => 'Active',
+                'is_active' => true,
+                'must_change_password' => false,
+                'gaji_perhari' => 75000,
+                'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+                'jam_masuk_kerja' => '08:00',
+                'jam_keluar_kerja' => '17:00',
+                'master_lokasi_id' => $pabrikHq->id,
+                'face_reverification_status' => 'NONE',
+            ]);
+        }
+
+        // 4c. Seed User DUMMY KARYAWAN
+        $karyawanEmail = 'karyawan@poncafood.com';
+        $karyawanPassword = 'PoncaKaryawan123';
+        $karyawanNik = 'KARYAWAN001';
+
+        $karyawan = User::where('email', $karyawanEmail)->orWhere('nik', $karyawanNik)->first();
+        if ($karyawan) {
+            $karyawan->update([
+                'name' => 'Karyawan Dummy Ponca',
+                'nama' => 'Karyawan Dummy Ponca',
+                'nik' => $karyawanNik,
+                'email' => $karyawanEmail,
+                'password' => Hash::make($karyawanPassword),
+                'jabatan' => 'Staff Operasional',
+                'role' => 'KARYAWAN',
+                'location' => 'Jakarta Selatan',
+                'status' => 'Active',
+                'is_active' => true,
+                'must_change_password' => false,
+                'gaji_perhari' => 75000,
+                'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
+                'jam_masuk_kerja' => '08:00',
+                'jam_keluar_kerja' => '17:00',
+                'master_lokasi_id' => $pabrikHq->id,
+                'face_reverification_status' => 'NONE',
+            ]);
+        } else {
+            User::create([
+                'name' => 'Karyawan Dummy Ponca',
+                'nama' => 'Karyawan Dummy Ponca',
+                'nik' => $karyawanNik,
+                'email' => $karyawanEmail,
+                'password' => Hash::make($karyawanPassword),
+                'jabatan' => 'Staff Operasional',
+                'role' => 'KARYAWAN',
+                'location' => 'Jakarta Selatan',
+                'status' => 'Active',
+                'is_active' => true,
+                'must_change_password' => false,
+                'gaji_perhari' => 75000,
+                'hari_kerja' => 'Senin,Selasa,Rabu,Kamis,Jumat',
+                'jam_masuk_kerja' => '08:00',
+                'jam_keluar_kerja' => '17:00',
+                'master_lokasi_id' => $pabrikHq->id,
+                'face_reverification_status' => 'NONE',
+            ]);
+        }
+
         // 5. Seed Produk Master Ponca Food & Raja Laris (Sesuai Harga Agen Resmi)
         $products = [
             [
