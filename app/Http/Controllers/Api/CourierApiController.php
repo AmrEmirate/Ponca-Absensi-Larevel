@@ -17,6 +17,17 @@ use Carbon\Carbon;
 class CourierApiController extends Controller
 {
     /**
+     * Helper untuk memastikan user memiliki role KURIR
+     */
+    private function isCourierUser(?User $user): bool
+    {
+        if (!$user) return false;
+        $role = strtoupper($user->role ?? '');
+        $jabatan = strtolower($user->jabatan ?? '');
+        return $role === 'KURIR' || str_contains($jabatan, 'kurir');
+    }
+
+    /**
      * GET /api/courier/assignment/today
      * Mendapatkan penugasan rute kurir aktif untuk hari ini.
      */
@@ -25,6 +36,12 @@ class CourierApiController extends Controller
         $user = $request->attributes->get('user') ?? $request->user();
         if (!$user) {
             return response()->json(['error' => 'Pengguna tidak terautentikasi'], 401);
+        }
+
+        if (!$this->isCourierUser($user)) {
+            return response()->json([
+                'error' => 'Akses ditolak: Hanya pengguna dengan role Kurir yang dapat mengakses penugasan pengantaran.',
+            ], 403);
         }
 
         $today = Carbon::today()->toDateString();
@@ -67,6 +84,10 @@ class CourierApiController extends Controller
     public function startAssignment(Request $request, $id)
     {
         $user = $request->attributes->get('user') ?? $request->user();
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya role Kurir yang dapat memulai pengantaran.'], 403);
+        }
+
         $assignment = CourierAssignment::where('id', $id)
             ->where('user_id', $user->id)
             ->first();
@@ -94,6 +115,10 @@ class CourierApiController extends Controller
     public function completeAssignment(Request $request, $id)
     {
         $user = $request->attributes->get('user') ?? $request->user();
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya role Kurir yang dapat menyelesaikan pengantaran.'], 403);
+        }
+
         $assignment = CourierAssignment::where('id', $id)
             ->where('user_id', $user->id)
             ->first();
@@ -121,6 +146,9 @@ class CourierApiController extends Controller
     public function batchLocations(Request $request)
     {
         $user = $request->attributes->get('user') ?? $request->user();
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya role Kurir yang dapat mengirim lokasi pengantaran.'], 403);
+        }
         $validated = $request->validate([
             'assignment_id' => 'nullable|integer',
             'locations' => 'required|array',
@@ -225,6 +253,10 @@ class CourierApiController extends Controller
     public function checkInStop(Request $request, $stopId)
     {
         $user = $request->attributes->get('user') ?? $request->user();
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya role Kurir yang dapat melakukan check-in toko.'], 403);
+        }
+
         $validated = $request->validate([
             'assignment_id' => 'required|integer',
             'notes' => 'nullable|string',
@@ -463,6 +495,11 @@ class CourierApiController extends Controller
             'route_id' => 'required|exists:routes,id',
             'assignment_date' => 'required|date',
         ]);
+
+        $user = User::find($validated['user_id']);
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya pengguna dengan role Kurir yang dapat ditugaskan.'], 403);
+        }
 
         $assignment = CourierAssignment::updateOrCreate(
             [
