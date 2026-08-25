@@ -435,11 +435,7 @@ class AdminController extends Controller
     {
         $nik = $request->input('nik');
         if (!$nik) {
-            $now = Carbon::now('Asia/Jakarta');
-            $prefix = $now->format('my');
-            $latestUser = User::withTrashed()->where('nik', 'like', $prefix . '%')->whereRaw('LENGTH(nik) = 7')->orderBy('nik', 'desc')->first();
-            $nextCounter = $latestUser ? ((int) substr($latestUser->nik, 4)) + 1 : 1;
-            $nik = $prefix . str_pad($nextCounter, 3, '0', STR_PAD_LEFT);
+            $nik = $this->generateNextNik();
         }
         $nama = $request->input('nama');
         $email = $request->input('email');
@@ -623,7 +619,7 @@ class AdminController extends Controller
 
         if ($user->email === 'amremirate03@gmail.com') {
             return response()->json([
-                'error' => 'Akun Admin Utama (amremirate03@gmail.com) tidak dapat dinonaktifkan.'
+                'error' => 'Akun Admin Utama (amremirate03@gmail.com) tidak dapat dihapus.'
             ], 400);
         }
 
@@ -635,14 +631,17 @@ class AdminController extends Controller
 
             if ($otherActiveAdmins < 1) {
                 return response()->json([
-                    'error' => 'Satu-satunya akun Admin aktif di sistem tidak dapat dinonaktifkan.'
+                    'error' => 'Satu-satunya akun Admin aktif di sistem tidak dapat dihapus.'
                 ], 400);
             }
         }
 
+        // Safe Delete (Soft Delete) agar seluruh data absensi & relasi tidak terhapus / rusak
         $user->update(['is_active' => false]);
+        $user->delete();
+
         $this->syncToSallerDatabase($user->email, $user->nama, $user->role, null, false);
-        return response()->json(['message' => 'Karyawan berhasil dinonaktifkan. Data dan NIK tetap tersimpan']);
+        return response()->json(['message' => 'Karyawan berhasil dihapus (Safe Delete). Seluruh data riwayat tetap tersimpan aman.']);
     }
 
     /**
@@ -1003,16 +1002,36 @@ class AdminController extends Controller
     }
 
     /**
+     * Generate Next NIK with strict auto-increment taking into account soft-deleted users
+     */
+    private function generateNextNik(): string
+    {
+        $now = Carbon::now('Asia/Jakarta');
+        $prefix = $now->format('my');
+
+        // Ambil semua user (termasuk yang sudah di-soft-delete) yang memiliki prefix bulan-tahun ini
+        $usersWithPrefix = User::withTrashed()->where('nik', 'like', $prefix . '%')->get();
+        $maxCounter = 0;
+        foreach ($usersWithPrefix as $u) {
+            $suffixStr = substr((string)$u->nik, strlen($prefix));
+            if (is_numeric($suffixStr)) {
+                $counterVal = (int) $suffixStr;
+                if ($counterVal > $maxCounter) {
+                    $maxCounter = $counterVal;
+                }
+            }
+        }
+
+        $nextCounter = $maxCounter + 1;
+        return $prefix . str_pad((string)$nextCounter, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * GET /api/admin/employees/next-nik
      */
     public function getNextNik()
     {
-        $now = Carbon::now('Asia/Jakarta');
-        $prefix = $now->format('my');
-        $latestUser = User::withTrashed()->where('nik', 'like', $prefix . '%')->whereRaw('LENGTH(nik) = 7')->orderBy('nik', 'desc')->first();
-        $nextCounter = $latestUser ? ((int) substr($latestUser->nik, 4)) + 1 : 1;
-        $nextNik = $prefix . str_pad($nextCounter, 3, '0', STR_PAD_LEFT);
-        return response()->json(['nik' => $nextNik]);
+        return response()->json(['nik' => $this->generateNextNik()]);
     }
 
     /**
