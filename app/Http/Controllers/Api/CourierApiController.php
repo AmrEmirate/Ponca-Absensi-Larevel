@@ -367,6 +367,93 @@ class CourierApiController extends Controller
     }
 
     /**
+     * PUT /api/admin/routes/{id}
+     * Memperbarui Master Rute dan daftar tokonya.
+     */
+    public function adminUpdateRoute(Request $request, $id)
+    {
+        $route = Route::findOrFail($id);
+
+        $validated = $request->validate([
+            'route_code' => 'required|string|max:50|unique:routes,route_code,' . $route->id,
+            'route_name' => 'required|string|max:100',
+            'area_name' => 'nullable|string|max:100',
+            'path_polyline' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+            'stops' => 'nullable|array',
+            'stops.*.store_name' => 'required|string|max:150',
+            'stops.*.address' => 'nullable|string',
+            'stops.*.latitude' => 'required|numeric',
+            'stops.*.longitude' => 'required|numeric',
+            'stops.*.sequence_order' => 'required|integer',
+            'stops.*.radius_tolerance_meters' => 'nullable|integer',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $route->update([
+                'route_code' => $validated['route_code'],
+                'route_name' => $validated['route_name'],
+                'area_name' => $validated['area_name'] ?? null,
+                'path_polyline' => $validated['path_polyline'] ?? $route->path_polyline,
+                'is_active' => $validated['is_active'] ?? $route->is_active,
+            ]);
+
+            if (isset($validated['stops'])) {
+                // Hapus stops lama dan buat ulang
+                $route->stops()->delete();
+                foreach ($validated['stops'] as $stopData) {
+                    $route->stops()->create([
+                        'store_name' => $stopData['store_name'],
+                        'address' => $stopData['address'] ?? null,
+                        'latitude' => $stopData['latitude'],
+                        'longitude' => $stopData['longitude'],
+                        'sequence_order' => $stopData['sequence_order'],
+                        'radius_tolerance_meters' => $stopData['radius_tolerance_meters'] ?? 50,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Master rute berhasil diperbarui',
+                'data' => $route->fresh('stops'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Gagal memperbarui rute: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/admin/routes/{id}
+     * Menghapus Master Rute beserta titik toko dan penugasan terkait.
+     */
+    public function adminDeleteRoute(Request $request, $id)
+    {
+        $route = Route::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            $route->stops()->delete();
+            $route->assignments()->delete();
+            $route->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Master rute berhasil dihapus',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Gagal menghapus rute: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * POST /api/admin/courier/assign
      */
     public function adminAssignCourier(Request $request)

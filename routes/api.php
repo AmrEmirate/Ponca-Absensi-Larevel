@@ -115,6 +115,8 @@ Route::prefix('courier')->middleware(JwtAuth::class)->group(function () {
 Route::prefix('admin')->middleware([JwtAuth::class, AdminOnly::class])->group(function () {
     Route::get('/routes', [CourierApiController::class, 'adminGetRoutes']);
     Route::post('/routes', [CourierApiController::class, 'adminCreateRoute']);
+    Route::put('/routes/{id}', [CourierApiController::class, 'adminUpdateRoute']);
+    Route::delete('/routes/{id}', [CourierApiController::class, 'adminDeleteRoute']);
     Route::post('/routes/from-trail', [CourierApiController::class, 'adminSaveRouteFromTrail']);
     Route::post('/courier/assign', [CourierApiController::class, 'adminAssignCourier']);
     Route::get('/courier/tracking/realtime', [CourierApiController::class, 'adminRealtimeTracking']);
