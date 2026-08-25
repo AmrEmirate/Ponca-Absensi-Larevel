@@ -226,7 +226,7 @@ class AuthController extends Controller
             return response()->json(['error' => 'Akses ditolak.'], 403);
         }
 
-        $query = User::whereIn('role', ['KARYAWAN', 'ADMIN'])
+        $query = User::where('role', '!=', 'SCANNER')
             ->where('is_active', true);
 
         // Filter by location if requester is a SCANNER tied to a specific location
@@ -241,8 +241,17 @@ class AuthController extends Controller
             ->orderBy('nama')
             ->get();
 
-        // Calculate shift dates (WIB)
-        $now = \Carbon\Carbon::now('Asia/Jakarta');
+        // Calculate shift dates based on timezone
+        $masterLokasi = null;
+        if ($jwtUser->role === 'SCANNER' && !empty($jwtUser->master_lokasi_id)) {
+            $masterLokasi = MasterLokasi::find($jwtUser->master_lokasi_id);
+        }
+        if (!$masterLokasi) {
+            $masterLokasi = MasterLokasi::where('is_active', true)->first() ?? MasterLokasi::first();
+        }
+        $tz = $masterLokasi ? $masterLokasi->timezone : 'Asia/Jakarta';
+
+        $now = \Carbon\Carbon::now($tz);
         $todayStr = $now->hour < 5 ? $now->copy()->subDay()->toDateString() : $now->toDateString();
         $yesterdayStr = $now->copy()->subDay()->toDateString();
         
@@ -253,19 +262,30 @@ class AuthController extends Controller
 
         $result = $users->map(function ($user) use ($recentAbsensis, $todayStr, $yesterdayStr) {
             $userAbsens = $recentAbsensis->get($user->id);
-            $latestAbsen = $userAbsens ? $userAbsens->first() : null;
 
             $hasCheckedIn = false;
             $hasCheckedOut = false;
 
-            if ($latestAbsen) {
-                if ($latestAbsen->tanggal === $todayStr) {
-                    $hasCheckedIn = !empty($latestAbsen->waktu_masuk);
-                    $hasCheckedOut = !empty($latestAbsen->waktu_keluar);
-                } else if ($latestAbsen->tanggal === $yesterdayStr && !empty($latestAbsen->waktu_masuk) && empty($latestAbsen->waktu_keluar)) {
-                    // Shift malam kemarin belum check-out
-                    $hasCheckedIn = true;
-                    $hasCheckedOut = false;
+            if ($userAbsens && $userAbsens->isNotEmpty()) {
+                // Cari record hari ini terlebih dahulu
+                $todayAbsen = $userAbsens->first(function ($absen) use ($todayStr) {
+                    $tgl = $absen->tanggal ? (is_string($absen->tanggal) ? substr($absen->tanggal, 0, 10) : $absen->tanggal->format('Y-m-d')) : '';
+                    return $tgl === $todayStr;
+                });
+
+                if ($todayAbsen) {
+                    $hasCheckedIn = !empty($todayAbsen->waktu_masuk);
+                    $hasCheckedOut = !empty($todayAbsen->waktu_keluar);
+                } else {
+                    // Cek jika ada shift malam kemarin yang belum check-out
+                    $yesterdayAbsen = $userAbsens->first(function ($absen) use ($yesterdayStr) {
+                        $tgl = $absen->tanggal ? (is_string($absen->tanggal) ? substr($absen->tanggal, 0, 10) : $absen->tanggal->format('Y-m-d')) : '';
+                        return $tgl === $yesterdayStr;
+                    });
+                    if ($yesterdayAbsen && !empty($yesterdayAbsen->waktu_masuk) && empty($yesterdayAbsen->waktu_keluar)) {
+                        $hasCheckedIn = true;
+                        $hasCheckedOut = false;
+                    }
                 }
             }
 
