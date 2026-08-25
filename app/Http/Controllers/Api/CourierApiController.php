@@ -78,6 +78,70 @@ class CourierApiController extends Controller
     }
 
     /**
+     * GET /api/courier/routes
+     * Kurir melihat daftar Master Rute yang tersedia untuk dipilih dari APK.
+     */
+    public function courierGetRoutes(Request $request)
+    {
+        $user = $request->attributes->get('user') ?? $request->user();
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya role Kurir yang dapat melihat daftar rute.'], 403);
+        }
+
+        $routes = Route::with(['stops' => function ($q) {
+            $q->orderBy('sequence_order', 'asc');
+        }])
+        ->where('is_active', true)
+        ->orderBy('route_name', 'asc')
+        ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $routes,
+        ]);
+    }
+
+    /**
+     * POST /api/courier/assignment/choose-and-start
+     * Kurir memilih rute secara mandiri dari aplikasi mobile dan langsung memulai perjalanan.
+     */
+    public function chooseAndStartRoute(Request $request)
+    {
+        $user = $request->attributes->get('user') ?? $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Pengguna tidak terautentikasi'], 401);
+        }
+
+        if (!$this->isCourierUser($user)) {
+            return response()->json(['error' => 'Akses ditolak: Hanya role Kurir yang dapat memilih dan memulai rute.'], 403);
+        }
+
+        $validated = $request->validate([
+            'route_id' => 'required|exists:routes,id',
+        ]);
+
+        $today = Carbon::today()->toDateString();
+
+        $assignment = CourierAssignment::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'assignment_date' => $today,
+            ],
+            [
+                'route_id' => $validated['route_id'],
+                'status' => 'in_progress',
+                'started_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rute berhasil dipilih dan perjalanan langsung dimulai',
+            'data' => $assignment->load(['route.stops', 'visits', 'user']),
+        ]);
+    }
+
+    /**
      * POST /api/courier/assignment/{id}/start
      * Kurir memulai perjalanan rute.
      */

@@ -102,7 +102,9 @@ Route::prefix('notifications')->middleware(JwtAuth::class)->group(function () {
 
 // === Courier Route & Tracking Routes (Mobile Kurir) ===
 Route::prefix('courier')->middleware(JwtAuth::class)->group(function () {
+    Route::get('/routes', [CourierApiController::class, 'courierGetRoutes']);
     Route::get('/assignment/today', [CourierApiController::class, 'getTodayAssignment']);
+    Route::post('/assignment/choose-and-start', [CourierApiController::class, 'chooseAndStartRoute']);
     Route::post('/assignment/{id}/start', [CourierApiController::class, 'startAssignment']);
     Route::post('/assignment/{id}/complete', [CourierApiController::class, 'completeAssignment']);
     Route::post('/locations/batch', [CourierApiController::class, 'batchLocations']);
