@@ -551,13 +551,24 @@ class CourierApiController extends Controller
 
     /**
      * POST /api/admin/courier/assign
+     * Menugaskan kurir ke rute yang sudah ada ATAU membuat rute pilot baru dengan toko tujuan.
      */
     public function adminAssignCourier(Request $request)
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'route_id' => 'required|exists:routes,id',
-            'assignment_date' => 'required|date',
+            'route_id' => 'nullable|exists:routes,id',
+            'route_code' => 'nullable|string|max:50',
+            'route_name' => 'nullable|string|max:100',
+            'area_name' => 'nullable|string|max:100',
+            'assignment_date' => 'nullable|date',
+            'stops' => 'nullable|array',
+            'stops.*.store_name' => 'required|string|max:150',
+            'stops.*.address' => 'nullable|string',
+            'stops.*.latitude' => 'required|numeric',
+            'stops.*.longitude' => 'required|numeric',
+            'stops.*.sequence_order' => 'required|integer',
+            'stops.*.radius_tolerance_meters' => 'nullable|integer',
         ]);
 
         $user = User::find($validated['user_id']);
@@ -565,22 +576,62 @@ class CourierApiController extends Controller
             return response()->json(['error' => 'Akses ditolak: Hanya pengguna dengan role Kurir yang dapat ditugaskan.'], 403);
         }
 
-        $assignment = CourierAssignment::updateOrCreate(
-            [
-                'user_id' => $validated['user_id'],
-                'assignment_date' => $validated['assignment_date'],
-            ],
-            [
-                'route_id' => $validated['route_id'],
-                'status' => 'assigned',
-            ]
-        );
+        $assignmentDate = $validated['assignment_date'] ?? Carbon::today()->toDateString();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Penugasan rute kurir berhasil disimpan',
-            'data' => $assignment->load(['route.stops', 'user']),
-        ]);
+        DB::beginTransaction();
+        try {
+            $routeId = $validated['route_id'] ?? null;
+
+            // Jika tidak ada route_id, buat rute pilot baru dengan stops tujuan
+            if (!$routeId) {
+                $code = $validated['route_code'] ?? ('PILOT-' . strtoupper(substr(uniqid(), -6)));
+                $name = $validated['route_name'] ?? ('Penugasan Rute Kurir ' . ($user->nama ?? $user->name));
+
+                $route = Route::create([
+                    'route_code' => $code,
+                    'route_name' => $name,
+                    'area_name' => $validated['area_name'] ?? null,
+                    'is_active' => true,
+                ]);
+
+                if (!empty($validated['stops'])) {
+                    foreach ($validated['stops'] as $stopData) {
+                        $route->stops()->create([
+                            'store_name' => $stopData['store_name'],
+                            'address' => $stopData['address'] ?? null,
+                            'latitude' => $stopData['latitude'],
+                            'longitude' => $stopData['longitude'],
+                            'sequence_order' => $stopData['sequence_order'],
+                            'radius_tolerance_meters' => $stopData['radius_tolerance_meters'] ?? 50,
+                        ]);
+                    }
+                }
+
+                $routeId = $route->id;
+            }
+
+            $assignment = CourierAssignment::updateOrCreate(
+                [
+                    'user_id' => $validated['user_id'],
+                    'assignment_date' => $assignmentDate,
+                ],
+                [
+                    'route_id' => $routeId,
+                    'status' => 'assigned',
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Penugasan rute kurir berhasil dikirim untuk tanggal ' . $assignmentDate,
+                'data' => $assignment->load(['route.stops', 'user']),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Gagal menugaskan kurir: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -657,6 +708,13 @@ class CourierApiController extends Controller
             'route_code' => 'required|string|max:50|unique:routes,route_code',
             'route_name' => 'required|string|max:100',
             'area_name' => 'nullable|string|max:100',
+            'stops' => 'nullable|array',
+            'stops.*.store_name' => 'required|string|max:150',
+            'stops.*.address' => 'nullable|string',
+            'stops.*.latitude' => 'required|numeric',
+            'stops.*.longitude' => 'required|numeric',
+            'stops.*.sequence_order' => 'required|integer',
+            'stops.*.radius_tolerance_meters' => 'nullable|integer',
         ]);
 
         $assignment = CourierAssignment::with([
@@ -691,18 +749,30 @@ class CourierApiController extends Controller
                 'is_active' => true,
             ]);
 
-            // Salin daftar stops jika ada
-            if ($assignment->route && $assignment->route->stops->isNotEmpty()) {
+            // Gunakan stops dari request atau salin dari rute penugasan
+            $stopsToCreate = $validated['stops'] ?? [];
+            if (empty($stopsToCreate) && $assignment->route && $assignment->route->stops->isNotEmpty()) {
                 foreach ($assignment->route->stops as $stop) {
-                    $newRoute->stops()->create([
+                    $stopsToCreate[] = [
                         'store_name' => $stop->store_name,
                         'address' => $stop->address,
                         'latitude' => $stop->latitude,
                         'longitude' => $stop->longitude,
                         'sequence_order' => $stop->sequence_order,
-                        'radius_tolerance_meters' => $stop->radius_tolerance_meters,
-                    ]);
+                        'radius_tolerance_meters' => $stop->radius_tolerance_meters ?? 50,
+                    ];
                 }
+            }
+
+            foreach ($stopsToCreate as $stopData) {
+                $newRoute->stops()->create([
+                    'store_name' => $stopData['store_name'],
+                    'address' => $stopData['address'] ?? null,
+                    'latitude' => $stopData['latitude'],
+                    'longitude' => $stopData['longitude'],
+                    'sequence_order' => $stopData['sequence_order'],
+                    'radius_tolerance_meters' => $stopData['radius_tolerance_meters'] ?? 50,
+                ]);
             }
 
             DB::commit();
